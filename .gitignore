@@ -1,0 +1,41 @@
+# Operating System & IDE
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Environment Variables & Secrets (CRITICAL)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+passwords.zip
+
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Node & Next.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.next/
+out/
+build/
+dist/
+.vercel/
+*.tsbuildinfo
