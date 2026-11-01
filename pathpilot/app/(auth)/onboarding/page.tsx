@@ -475,8 +475,11 @@ export default function OnboardingPage() {
     }
 
     try {
-      // 1. Save to Python backend & Supabase metadata
-      await saveOnboardingProfile(finalProfile)
+      // 1. Save to Python backend & Supabase metadata (with 4s max timeout so UI never hangs)
+      await Promise.race([
+        saveOnboardingProfile(finalProfile),
+        new Promise((resolve) => setTimeout(resolve, 4000)),
+      ])
 
       // 2. Persist locally
       if (typeof window !== 'undefined') {
@@ -499,12 +502,21 @@ export default function OnboardingPage() {
         document.cookie = 'pathpilot_onboarded=true; path=/; max-age=2592000'
         // Clear draft
         localStorage.removeItem('pathpilot_onboarding_draft')
+
+        // 3. Navigate directly to Dashboard
+        window.location.href = '/dashboard'
+        return
       }
 
-      // 3. Navigate to Dashboard
       router.push('/dashboard')
     } catch (err: any) {
       console.error('Save onboarding error:', err)
+      // Even if network errored, let the user proceed since draft is saved locally
+      if (typeof window !== 'undefined') {
+        document.cookie = 'pathpilot_onboarded=true; path=/; max-age=2592000'
+        window.location.href = '/dashboard'
+        return
+      }
       setSubmitError(err.message || 'Failed to save profile. Please try again.')
       setIsSubmitting(false)
     }
