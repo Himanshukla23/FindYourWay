@@ -43,7 +43,36 @@ export async function GET(request: Request) {
       if (!error && data?.session) {
         // Clear demo cookie if present
         cookieStore.delete('pathpilot_demo_session')
-        return NextResponse.redirect(`${origin}${next}`)
+
+        const requestedRole = searchParams.get('role') || 'student'
+        const user = data.session.user
+        let role = user?.user_metadata?.role
+
+        // If new user without role, update metadata with requested role
+        if (!role) {
+          role = requestedRole
+          await supabase.auth.updateUser({
+            data: {
+              role: requestedRole,
+              mentor_status: requestedRole === 'mentor' ? 'pending_approval' : undefined,
+            },
+          }).catch(() => {})
+        }
+
+        // Set role cookie
+        cookieStore.set('pathpilot_user_role', role, { path: '/', maxAge: 2592000 })
+
+        // Role-based target destination
+        let target = next
+        if (target === '/onboarding' || target === '/dashboard') {
+          if (role === 'mentor') {
+            target = user?.user_metadata?.mentor_status === 'pending_approval' ? '/mentor/profile' : '/mentor/dashboard'
+          } else {
+            target = '/student/dashboard'
+          }
+        }
+
+        return NextResponse.redirect(`${origin}${target}`)
       } else if (error) {
         console.error('[OAuth Callback] Session exchange error:', error.message)
         return NextResponse.redirect(`${origin}/sign-in?error=${encodeURIComponent(error.message)}`)

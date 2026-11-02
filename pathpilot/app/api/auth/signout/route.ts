@@ -43,8 +43,8 @@ async function handleSignOut(request: Request) {
   }
 
   // 2. Explicitly clear all session cookies
-  const allCookies = cookieStore.getAll()
-  const response = NextResponse.redirect(`${origin}/sign-in`, { status: 303 })
+  const redirectTo = new URL(request.url).searchParams.get('redirect') || '/'
+  const response = NextResponse.redirect(`${origin}${redirectTo}`, { status: 303 })
 
   // Delete demo session and onboarding cookies
   response.cookies.delete('pathpilot_demo_session')
@@ -53,6 +53,7 @@ async function handleSignOut(request: Request) {
   cookieStore.delete('pathpilot_onboarded')
 
   // Delete all Supabase auth cookie chunks (e.g. sb-*-auth-token, sb-*-auth-token.0)
+  const allCookies = cookieStore.getAll()
   for (const c of allCookies) {
     if (c.name.startsWith('sb-') || c.name.startsWith('pathpilot_')) {
       response.cookies.delete(c.name)

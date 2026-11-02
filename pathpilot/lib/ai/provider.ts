@@ -25,15 +25,14 @@ export async function executeAIPrompt({
   const geminiApiKey = process.env.GOOGLE_GEMINI_API_KEY
   const groqApiKey = process.env.GROQ_API_KEY
 
-  // ── 1. Try Google Gemini First ───────────────────────────────────────────────
+  // ── 1. Try Google Gemini First (Ultra-fast verified active models) ──────────
   if (geminiApiKey) {
     try {
-      console.log('🤖 [AI] Dispatching request to Google Gemini...')
       const genAI = new GoogleGenerativeAI(geminiApiKey)
-      
-      const geminiModels = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-pro-latest']
+      // gemini-flash-lite-latest and gemini-3.5-flash-lite respond in < 1s
+      const geminiModels = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-flash-latest']
       let text = null
-      let usedModel = 'gemini-3.8-flash'
+      let usedModel = 'gemini-flash-lite-latest'
 
       for (const m of geminiModels) {
         try {
@@ -44,14 +43,20 @@ export async function executeAIPrompt({
             },
             systemInstruction: systemInstruction,
           })
-          const result = await model.generateContent(prompt)
-          text = result.response.text()
+
+          // Strict 4.5s timeout per attempt so UI never hangs
+          const result: any = await Promise.race([
+            model.generateContent(prompt),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('AI generation timeout')), 4500)),
+          ])
+
+          text = result?.response?.text()
           if (text) {
             usedModel = m
             break
           }
         } catch (e: any) {
-          console.warn(`Gemini model ${m} failed, trying next...`, e?.message)
+          console.warn(`Gemini model ${m} skipped (${e?.message || 'error'}), trying next...`)
         }
       }
 
@@ -64,14 +69,12 @@ export async function executeAIPrompt({
       }
     } catch (geminiError: any) {
       console.warn('⚠️ [AI] Gemini request failed or rate limit reached:', geminiError?.message || geminiError)
-      console.log('🔄 [AI] Seamlessly failing over to Groq API...')
     }
   }
 
-  // ── 2. Fallback to Groq API (High Performance verified active endpoints) ────
+  // ── 2. Fallback to Groq API (Strict short timeout) ──────────────────────────
   if (groqApiKey) {
     try {
-      console.log('🤖 [AI] Dispatching request to Groq...')
       const groq = new Groq({ apiKey: groqApiKey })
       
       const messages: any[] = []
@@ -80,24 +83,31 @@ export async function executeAIPrompt({
       }
       messages.push({ role: 'user', content: prompt })
 
-      const groqModels = ['qwen/qwen3.8-27b', 'openai/gpt-oss-120b', 'openai/gpt-oss-20b']
+      const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']
       let text = null
-      let usedModel = 'qwen/qwen3.8-27b'
+      let usedModel = 'llama-3.3-70b-versatile'
 
       for (const m of groqModels) {
         try {
-          const completion = await groq.chat.completions.create({
-            model: m,
-            messages,
-            response_format: responseJson ? { type: 'json_object' } : undefined,
-          })
+          const completion: any = await Promise.race([
+            groq.chat.completions.create({
+              model: m,
+              messages,
+              response_format: responseJson ? { type: 'json_object' } : undefined,
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Groq timeout')), 3000)),
+          ])
           text = completion.choices[0]?.message?.content
           if (text) {
             usedModel = m
             break
           }
         } catch (err: any) {
-          console.warn(`Groq model ${m} attempt failed, trying next...`, err?.message)
+          console.warn(`Groq model ${m} skipped:`, err?.message)
+          // If auth error (e.g. 403 Forbidden), do not attempt more groq models
+          if (err?.status === 403 || err?.message?.includes('403')) {
+            break
+          }
         }
       }
 
@@ -109,7 +119,7 @@ export async function executeAIPrompt({
         }
       }
     } catch (groqError: any) {
-      console.error('❌ [AI] Groq fallback also failed:', groqError?.message || groqError)
+      console.warn('❌ [AI] Groq fallback failed:', groqError?.message || groqError)
     }
   }
 

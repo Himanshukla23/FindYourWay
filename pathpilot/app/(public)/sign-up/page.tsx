@@ -129,6 +129,42 @@ export default function SignUpPage() {
         </p>
       </div>
 
+      {/* Dual Portal Switcher */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20 }}>
+        <Link
+          href="/student/sign-up"
+          style={{
+            padding: '10px 12px',
+            textAlign: 'center',
+            borderRadius: 12,
+            background: '#EFF6FF',
+            border: '2px solid #2563EB',
+            color: '#1D4ED8',
+            fontSize: '0.8125rem',
+            fontWeight: 700,
+            textDecoration: 'none',
+          }}
+        >
+          🎓 Student Sign Up
+        </Link>
+        <Link
+          href="/mentor/sign-up"
+          style={{
+            padding: '10px 12px',
+            textAlign: 'center',
+            borderRadius: 12,
+            background: '#F8FAFC',
+            border: '1px solid #E2E8F0',
+            color: '#475569',
+            fontSize: '0.8125rem',
+            fontWeight: 600,
+            textDecoration: 'none',
+          }}
+        >
+          💼 Mentor Apply
+        </Link>
+      </div>
+
       {/* Card */}
       <div 
         className="card" 

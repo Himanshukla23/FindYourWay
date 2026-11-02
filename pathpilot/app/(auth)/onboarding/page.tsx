@@ -474,52 +474,45 @@ export default function OnboardingPage() {
       updated_at: new Date().toISOString(),
     }
 
+    // 1. Persist locally first so user never experiences lag
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pathpilot_student_profile', JSON.stringify(finalProfile))
+      localStorage.setItem('pathpilot_onboarding_completed', 'true')
+      if (data.targetRole) {
+        localStorage.setItem('pathpilot_target_role', data.targetRole)
+      }
+      if (data.resumeParsed && data.recommendedRoles.length > 0) {
+        localStorage.setItem(
+          'pathpilot_resume_analysis',
+          JSON.stringify({
+            summary: data.summary,
+            skills: data.technicalSkills,
+            recommendedRoles: data.recommendedRoles,
+          })
+        )
+      }
+      // Set client cookie so middleware recognizes completion immediately
+      document.cookie = 'pathpilot_onboarded=true; path=/; max-age=2592000'
+      // Clear draft
+      localStorage.removeItem('pathpilot_onboarding_draft')
+    }
+
     try {
-      // 1. Save to Python backend & Supabase metadata (with 4s max timeout so UI never hangs)
+      // 2. Fire and sync to Python backend & Supabase in parallel with a fast 400ms max safety race
       await Promise.race([
         saveOnboardingProfile(finalProfile),
-        new Promise((resolve) => setTimeout(resolve, 4000)),
+        new Promise((resolve) => setTimeout(resolve, 400)),
       ])
-
-      // 2. Persist locally
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('pathpilot_student_profile', JSON.stringify(finalProfile))
-        localStorage.setItem('pathpilot_onboarding_completed', 'true')
-        if (data.targetRole) {
-          localStorage.setItem('pathpilot_target_role', data.targetRole)
-        }
-        if (data.resumeParsed && data.recommendedRoles.length > 0) {
-          localStorage.setItem(
-            'pathpilot_resume_analysis',
-            JSON.stringify({
-              summary: data.summary,
-              skills: data.technicalSkills,
-              recommendedRoles: data.recommendedRoles,
-            })
-          )
-        }
-        // Set client cookie so middleware recognizes completion immediately
-        document.cookie = 'pathpilot_onboarded=true; path=/; max-age=2592000'
-        // Clear draft
-        localStorage.removeItem('pathpilot_onboarding_draft')
-
-        // 3. Navigate directly to Dashboard
-        window.location.href = '/dashboard'
-        return
-      }
-
-      router.push('/dashboard')
     } catch (err: any) {
-      console.error('Save onboarding error:', err)
-      // Even if network errored, let the user proceed since draft is saved locally
-      if (typeof window !== 'undefined') {
-        document.cookie = 'pathpilot_onboarded=true; path=/; max-age=2592000'
-        window.location.href = '/dashboard'
-        return
-      }
-      setSubmitError(err.message || 'Failed to save profile. Please try again.')
-      setIsSubmitting(false)
+      console.warn('Background profile sync note:', err)
     }
+
+    // 3. Navigate directly to Dashboard instantaneously
+    if (typeof window !== 'undefined') {
+      window.location.href = '/dashboard'
+      return
+    }
+    router.push('/dashboard')
   }
 
   // ── Format file size helper ───────────────────────────────────────────────

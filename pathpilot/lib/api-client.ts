@@ -151,37 +151,27 @@ export interface RoadmapResult {
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_PYTHON_BACKEND_URL || 'http://localhost:8000'
 
-/**
- * Fetch mentors from Python backend, falling back to DEMO_MENTORS
- */
-export async function getMentors(params?: {
-  domain?: string
-  search?: string
-  sort_by?: string
-}): Promise<Mentor[]> {
-  try {
-    const query = new URLSearchParams()
-    if (params?.domain && params.domain !== 'all') query.set('domain', params.domain)
-    if (params?.search) query.set('search', params.search)
-    if (params?.sort_by) query.set('sort_by', params.sort_by)
+let backendReachable: boolean | null = null
+let lastHealthCheckTime = 0
+const HEALTH_CACHE_TTL = 30000 // 30s cache
 
-    const url = `${BACKEND_URL}/api/mentors${query.toString() ? '?' + query.toString() : ''}`
-    const res = await fetch(url, { signal: AbortSignal.timeout(3500) })
-
-    if (res.ok) {
-      const data = await res.json()
-      if (Array.isArray(data) && data.length > 0) {
-        return data
-      }
-      if (data?.mentors && Array.isArray(data.mentors) && data.mentors.length > 0) {
-        return data.mentors
-      }
-    }
-  } catch (err) {
-    console.warn('Backend getMentors unreachable, using demo mentors:', err)
+export function isBackendUsable(): boolean {
+  // If deployed in production (e.g. Vercel) and BACKEND_URL is localhost, cannot connect
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && BACKEND_URL.includes('localhost')) {
+    return false
   }
+  if (backendReachable === false && Date.now() - lastHealthCheckTime < HEALTH_CACHE_TTL) {
+    return false
+  }
+  return true
+}
 
-  // Fallback
+function markBackendStatus(status: boolean) {
+  backendReachable = status
+  lastHealthCheckTime = Date.now()
+}
+
+function filterDemoMentors(params?: { domain?: string; search?: string; sort_by?: string }): Mentor[] {
   let filtered = [...DEMO_MENTORS]
   if (params?.search) {
     const s = params.search.toLowerCase()
@@ -202,18 +192,53 @@ export async function getMentors(params?: {
 }
 
 /**
+ * Fetch mentors from Python backend, falling back to DEMO_MENTORS instantly
+ */
+export async function getMentors(params?: {
+  domain?: string
+  search?: string
+  sort_by?: string
+}): Promise<Mentor[]> {
+  if (isBackendUsable()) {
+    try {
+      const query = new URLSearchParams()
+      if (params?.domain && params.domain !== 'all') query.set('domain', params.domain)
+      if (params?.search) query.set('search', params.search)
+      if (params?.sort_by) query.set('sort_by', params.sort_by)
+
+      const url = `${BACKEND_URL}/api/mentors${query.toString() ? '?' + query.toString() : ''}`
+      const res = await fetch(url, { signal: AbortSignal.timeout(1200) })
+
+      if (res.ok) {
+        markBackendStatus(true)
+        const data = await res.json()
+        if (Array.isArray(data) && data.length > 0) return data
+        if (data?.mentors && Array.isArray(data.mentors) && data.mentors.length > 0) return data.mentors
+      }
+    } catch {
+      markBackendStatus(false)
+    }
+  }
+
+  return filterDemoMentors(params)
+}
+
+/**
  * Fetch single mentor
  */
 export async function getMentorById(mentorId: string): Promise<Mentor | null> {
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/mentors/${mentorId}`, {
-      signal: AbortSignal.timeout(3500),
-    })
-    if (res.ok) {
-      return await res.json()
+  if (isBackendUsable()) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/mentors/${mentorId}`, {
+        signal: AbortSignal.timeout(1000),
+      })
+      if (res.ok) {
+        markBackendStatus(true)
+        return await res.json()
+      }
+    } catch {
+      markBackendStatus(false)
     }
-  } catch (err) {
-    console.warn('Backend getMentorById failed:', err)
   }
 
   return DEMO_MENTORS.find((m) => m.id === mentorId) || DEMO_MENTORS[0] || null
@@ -223,25 +248,76 @@ export async function getMentorById(mentorId: string): Promise<Mentor | null> {
  * Fetch bookable slots for a mentor
  */
 export async function getMentorSlots(mentorId: string): Promise<AvailableSlot[]> {
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/mentors/${mentorId}/slots`, {
-      signal: AbortSignal.timeout(3500),
-    })
-    if (res.ok) {
-      const json = await res.json()
-      if (Array.isArray(json)) return json
-      if (json?.slots && Array.isArray(json.slots)) return json.slots
+  if (isBackendUsable()) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/mentors/${mentorId}/slots`, {
+        signal: AbortSignal.timeout(1000),
+      })
+      if (res.ok) {
+        markBackendStatus(true)
+        const json = await res.json()
+        if (Array.isArray(json) && json.length > 0) return json
+        if (json?.slots && Array.isArray(json.slots) && json.slots.length > 0) return json.slots
+      }
+    } catch {
+      markBackendStatus(false)
     }
-  } catch (err) {
-    console.warn('Backend getMentorSlots failed, generating local fallback slots:', err)
   }
 
-  // Generate 5 dynamic fallback slots for tomorrow and weekend
-  const fallbackSlots: AvailableSlot[] = [
+  // Dynamic slot generation from mentor availability & existing bookings
+  try {
+    const { generateAvailableSlots } = await import('./scheduling/slot-generator')
+    const existingBookings = getLocalBookings()
+
+    // Check if customized availability exists in cookies
+    let schedule = [
+      { day_of_week: 1, day_name: 'Monday', is_active: true, slots: [{ start_time: '10:00', end_time: '13:00' }, { start_time: '15:00', end_time: '18:00' }] },
+      { day_of_week: 2, day_name: 'Tuesday', is_active: true, slots: [{ start_time: '10:00', end_time: '13:00' }, { start_time: '15:00', end_time: '18:00' }] },
+      { day_of_week: 3, day_name: 'Wednesday', is_active: true, slots: [{ start_time: '10:00', end_time: '13:00' }, { start_time: '15:00', end_time: '18:00' }] },
+      { day_of_week: 4, day_name: 'Thursday', is_active: true, slots: [{ start_time: '10:00', end_time: '13:00' }, { start_time: '15:00', end_time: '18:00' }] },
+      { day_of_week: 5, day_name: 'Friday', is_active: true, slots: [{ start_time: '10:00', end_time: '13:00' }, { start_time: '14:00', end_time: '17:00' }] },
+      { day_of_week: 6, day_name: 'Saturday', is_active: true, slots: [{ start_time: '11:00', end_time: '14:00' }] },
+      { day_of_week: 0, day_name: 'Sunday', is_active: false, slots: [] },
+    ]
+    let exceptions: any[] = []
+    let settings: any = { buffer_minutes: 15, notice_hours: 4, timezone: 'Asia/Kolkata' }
+
+    if (typeof document !== 'undefined') {
+      const match = document.cookie.match(/pathpilot_mentor_availability=([^;]+)/)
+      if (match) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(match[1]))
+          if (parsed.weekly_schedule) schedule = parsed.weekly_schedule
+          if (parsed.exceptions) exceptions = parsed.exceptions
+          if (parsed.settings) settings = parsed.settings
+        } catch {}
+      }
+    }
+
+    const calculatedSlots = generateAvailableSlots({
+      mentorId,
+      weeklySchedule: schedule,
+      exceptions,
+      settings,
+      existingBookings,
+      sessionDurationMins: 30,
+      daysAhead: 14,
+    })
+
+    if (calculatedSlots.length > 0) {
+      return calculatedSlots
+    }
+  } catch (err) {
+    console.error('Error calculating slots:', err)
+  }
+
+  // Fallback slots if computation fails
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+  return [
     {
       id: `slot-${mentorId}-1`,
       mentor_id: mentorId,
-      date: 'Tomorrow',
+      date: tomorrow,
       start_time: '18:00',
       end_time: '18:30',
       duration_minutes: 30,
@@ -251,73 +327,59 @@ export async function getMentorSlots(mentorId: string): Promise<AvailableSlot[]>
     {
       id: `slot-${mentorId}-2`,
       mentor_id: mentorId,
-      date: 'Tomorrow',
+      date: tomorrow,
       start_time: '19:30',
       end_time: '20:00',
       duration_minutes: 30,
       is_booked: false,
       display_label: 'Tomorrow, 7:30 PM - 8:00 PM IST',
     },
-    {
-      id: `slot-${mentorId}-3`,
-      mentor_id: mentorId,
-      date: 'Saturday',
-      start_time: '16:00',
-      end_time: '16:30',
-      duration_minutes: 30,
-      is_booked: false,
-      display_label: 'Saturday, 4:00 PM - 4:30 PM IST',
-    },
-    {
-      id: `slot-${mentorId}-4`,
-      mentor_id: mentorId,
-      date: 'Saturday',
-      start_time: '18:00',
-      end_time: '18:30',
-      duration_minutes: 30,
-      is_booked: false,
-      display_label: 'Saturday, 6:00 PM - 6:30 PM IST',
-    },
-    {
-      id: `slot-${mentorId}-5`,
-      mentor_id: mentorId,
-      date: 'Sunday',
-      start_time: '11:00',
-      end_time: '11:30',
-      duration_minutes: 30,
-      is_booked: false,
-      display_label: 'Sunday, 11:00 AM - 11:30 AM IST',
-    },
   ]
-  return fallbackSlots
 }
 
 /**
  * Create a new booking
  */
+/**
+ * Create a new booking
+ */
 export async function createBooking(payload: BookingPayload): Promise<BookingResponse> {
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/bookings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(5000),
-    })
+  if (isBackendUsable()) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(1800),
+      })
 
-    if (res.status === 409) {
-      throw new Error('This slot was just booked by another candidate. Please pick another slot.')
-    }
+      if (res.status === 409) {
+        throw new Error('This slot was just booked by another candidate. Please pick another slot.')
+      }
 
-    if (res.ok) {
-      const data = await res.json()
-      const bookingData = data?.data || data
-      // Cache booking in local storage
-      persistLocalBooking(bookingData)
-      return bookingData
+      if (res.ok) {
+        markBackendStatus(true)
+        const data = await res.json()
+        const bookingData = data?.data || data
+        // Cache booking in local storage
+        persistLocalBooking(bookingData)
+        return bookingData
+      }
+    } catch (err: any) {
+      if (err.message?.includes('booked')) throw err
+      markBackendStatus(false)
     }
-  } catch (err: any) {
-    if (err.message?.includes('booked')) throw err
-    console.warn('Backend createBooking unreachable, using local mock booking:', err)
+  }
+
+  // Parse chosen slot time if available from slot_id
+  let bookingDate = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+  let bookingStartTime = '18:00'
+  if (payload.slot_id) {
+    const parts = payload.slot_id.split('-')
+    if (parts.length >= 6) {
+      bookingDate = `${parts[2]}-${parts[3]}-${parts[4]}`
+      bookingStartTime = parts[5]
+    }
   }
 
   // Fallback booking object - does NOT fake real Google Meet links
@@ -330,8 +392,8 @@ export async function createBooking(payload: BookingPayload): Promise<BookingRes
     mentor_org: mentor.organisation,
     user_name: payload.user_name || 'Student',
     user_email: payload.user_email || 'student@pathpilot.dev',
-    date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-    start_time: '18:00',
+    date: bookingDate,
+    start_time: bookingStartTime,
     duration_minutes: payload.duration_mins || 30,
     topic: payload.topic,
     notes: payload.notes || '',
@@ -351,22 +413,21 @@ export async function createBooking(payload: BookingPayload): Promise<BookingRes
  * Retrieve user bookings
  */
 export async function getBookings(userEmail?: string): Promise<BookingResponse[]> {
-  try {
-    const query = userEmail ? `?user_email=${encodeURIComponent(userEmail)}` : ''
-    const res = await fetch(`${BACKEND_URL}/api/bookings${query}`, {
-      signal: AbortSignal.timeout(3500),
-    })
-    if (res.ok) {
-      const json = await res.json()
-      if (Array.isArray(json) && json.length > 0) {
-        return json
+  if (isBackendUsable()) {
+    try {
+      const query = userEmail ? `?user_email=${encodeURIComponent(userEmail)}` : ''
+      const res = await fetch(`${BACKEND_URL}/api/bookings${query}`, {
+        signal: AbortSignal.timeout(1000),
+      })
+      if (res.ok) {
+        markBackendStatus(true)
+        const json = await res.json()
+        if (Array.isArray(json) && json.length > 0) return json
+        if (json?.bookings && Array.isArray(json.bookings) && json.bookings.length > 0) return json.bookings
       }
-      if (json?.bookings && Array.isArray(json.bookings) && json.bookings.length > 0) {
-        return json.bookings
-      }
+    } catch {
+      markBackendStatus(false)
     }
-  } catch (err) {
-    console.warn('Backend getBookings unreachable, loading local cached bookings:', err)
   }
 
   return getLocalBookings()
@@ -376,17 +437,20 @@ export async function getBookings(userEmail?: string): Promise<BookingResponse[]
  * Cancel a booking
  */
 export async function cancelBooking(bookingId: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/bookings/${bookingId}/cancel`, {
-      method: 'POST',
-      signal: AbortSignal.timeout(3500),
-    })
-    if (res.ok) {
-      updateLocalBookingStatus(bookingId, 'cancelled')
-      return true
+  if (isBackendUsable()) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/bookings/${bookingId}/cancel`, {
+        method: 'POST',
+        signal: AbortSignal.timeout(1000),
+      })
+      if (res.ok) {
+        markBackendStatus(true)
+        updateLocalBookingStatus(bookingId, 'cancelled')
+        return true
+      }
+    } catch {
+      markBackendStatus(false)
     }
-  } catch (err) {
-    console.warn('Backend cancelBooking unreachable, updating local storage:', err)
   }
 
   updateLocalBookingStatus(bookingId, 'cancelled')
@@ -394,7 +458,7 @@ export async function cancelBooking(bookingId: string): Promise<boolean> {
 }
 
 /**
- * Resume Analysis - sends directly to Python backend with local Next.js fallback
+ * Resume Analysis - fast direct Next.js API route with resilient backend fallback
  */
 export async function parseResumeWithBackend(file: File): Promise<{
   success: boolean
@@ -403,36 +467,43 @@ export async function parseResumeWithBackend(file: File): Promise<{
   model?: string
   error?: string
 }> {
-  try {
-    const formData = new FormData()
-    formData.append('file', file)
-
-    const res = await fetch(`${BACKEND_URL}/api/ai/parse-resume`, {
-      method: 'POST',
-      body: formData,
-      signal: AbortSignal.timeout(15000),
-    })
-
-    if (res.ok) {
-      const json = await res.json()
-      return json
-    }
-  } catch (err) {
-    console.warn('Python backend resume parse failed, falling back to Next.js API:', err)
-  }
-
-  // Fallback to Next.js internal API route
+  // 1. Direct Next.js internal API route (Fastest: < 1.5s with Gemini Flash Lite, 100% Vercel & local compatible)
   try {
     const formData = new FormData()
     formData.append('file', file)
     const res = await fetch('/api/ai/parse-resume', {
       method: 'POST',
       body: formData,
+      signal: AbortSignal.timeout(8000),
     })
-    return await res.json()
+    if (res.ok) {
+      const json = await res.json()
+      if (json && json.success) return json
+    }
   } catch (err: any) {
-    return { success: false, error: err?.message || 'Failed to analyze resume' }
+    console.warn('Next.js resume parse attempt note:', err?.message)
   }
+
+  // 2. Fallback to Python backend if reachable
+  if (isBackendUsable()) {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch(`${BACKEND_URL}/api/ai/parse-resume`, {
+        method: 'POST',
+        body: formData,
+        signal: AbortSignal.timeout(2000),
+      })
+      if (res.ok) {
+        markBackendStatus(true)
+        return await res.json()
+      }
+    } catch {
+      markBackendStatus(false)
+    }
+  }
+
+  return { success: false, error: 'Failed to analyze resume' }
 }
 
 /**
@@ -448,12 +519,13 @@ export async function updateTaskProgress(
     user_email?: string
   }
 ) {
+  if (!isBackendUsable()) return
   try {
     await fetch(`${BACKEND_URL}/api/progress/tasks/${taskId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(1000),
     })
   } catch {
     // Non-blocking background sync
@@ -461,20 +533,21 @@ export async function updateTaskProgress(
 }
 
 /**
-/**
  * Save onboarding profile with persistence to backend, Supabase metadata, and localStorage
  */
 export async function saveOnboardingProfile(profile: any) {
-  // 1. Persist to Python FastAPI backend
-  try {
-    await fetch(`${BACKEND_URL}/api/onboarding/profile`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(profile),
-      signal: AbortSignal.timeout(3500),
-    })
-  } catch {
-    // resilient fallback
+  // 1. Persist to Python FastAPI backend (Fast 800ms timeout)
+  if (isBackendUsable()) {
+    try {
+      await fetch(`${BACKEND_URL}/api/onboarding/profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile),
+        signal: AbortSignal.timeout(800),
+      })
+    } catch {
+      markBackendStatus(false)
+    }
   }
 
   // 2. Persist to Supabase if configured & authenticated

@@ -1,6 +1,17 @@
 // ─── User & Profile Types ─────────────────────────────────────────────────────
 
 export type UserRole = 'student' | 'mentor' | 'admin'
+export type UserRoleStatus = 'active' | 'pending_approval' | 'approved' | 'suspended'
+export type MentorVerificationStatus = 'draft' | 'pending_approval' | 'approved' | 'rejected'
+
+export interface UserRoleRecord {
+  id?: string
+  user_id: string
+  role: UserRole
+  status: UserRoleStatus
+  created_at?: string
+  updated_at?: string
+}
 
 export interface Profile {
   id: string
@@ -282,29 +293,85 @@ export interface RoadmapTask {
   order_index: number
 }
 
-// ─── Mentor Types ─────────────────────────────────────────────────────────────
-
 export interface MentorProfile {
   id: string
   user_id: string | null
   full_name: string
+  email?: string
+  phone?: string
   title: string
   organisation: string
   bio: string
   avatar_url: string | null
+  country?: string
+  timezone?: string
   years_experience: number
+  previous_experience?: string
+  education?: string
+  linkedin_url: string | null
+  portfolio_url?: string
+  primary_domain?: string
   domains: string[]
   skills: string[]
+  target_roles?: string[]
   mentoring_topics: string[]
+  languages?: string[]
+  consultation_types?: string[]
+  consultation_format?: string
+  target_audience?: string[]
   session_price_inr: number
   session_duration_mins: number[]
+  weekly_capacity?: number
+  terms_accepted?: boolean
   rating: number
   review_count: number
   is_verified: boolean
+  verification_status?: MentorVerificationStatus
+  draft_step?: number
   is_demo_profile: boolean
-  linkedin_url: string | null
   is_available: boolean
   created_at: string
+  updated_at?: string
+}
+
+export interface MentorOnboardingFormData {
+  // Step 1: Basic Information
+  full_name: string
+  email: string
+  phone: string
+  avatar_url: string
+  country: string
+  timezone: string
+
+  // Step 2: Professional Experience
+  title: string
+  organisation: string
+  years_experience: number
+  previous_experience: string
+  education: string
+  linkedin_url: string
+  portfolio_url: string
+
+  // Step 3: Mentoring Expertise
+  primary_domain: string
+  target_roles: string[]
+  skills: string[]
+  mentoring_topics: string[]
+  languages: string[]
+  bio: string
+  consultation_types: string[]
+
+  // Step 4: Session Preferences
+  session_duration_mins: number[]
+  session_price_inr: number
+  consultation_format: string
+  target_audience: string[]
+  weekly_capacity: number
+
+  // Step 5: Review & Submission
+  terms_accepted: boolean
+  verification_status: MentorVerificationStatus
+  draft_step: number
 }
 
 export interface AvailableSlot {
@@ -392,4 +459,43 @@ export interface AIServiceResult<T> {
   error: string | null
   provider: AIProvider
   is_demo: boolean
+}
+
+// ─── Mentor Availability & Scheduling Types (Phase 3) ─────────────────────────
+
+export interface TimeSlotInterval {
+  id?: string
+  start_time: string // '09:00' (24-hour format)
+  end_time: string   // '12:00' (24-hour format)
+}
+
+export interface WeeklyDaySchedule {
+  day_of_week: number // 0 = Sunday, 1 = Monday, ... 6 = Saturday
+  day_name: string    // 'Monday', etc.
+  is_active: boolean
+  slots: TimeSlotInterval[]
+}
+
+export interface AvailabilityException {
+  id?: string
+  mentor_id?: string
+  exception_date: string // 'YYYY-MM-DD'
+  is_unavailable: boolean // true = blocked whole day, false = custom hours
+  start_time?: string | null
+  end_time?: string | null
+  reason?: string
+}
+
+export interface MentorSchedulingSettings {
+  mentor_id?: string
+  timezone: string
+  buffer_minutes: number
+  notice_hours: number
+  max_weeks_in_advance: number
+}
+
+export interface MentorAvailabilityData {
+  weekly_schedule: WeeklyDaySchedule[]
+  exceptions: AvailabilityException[]
+  settings: MentorSchedulingSettings
 }

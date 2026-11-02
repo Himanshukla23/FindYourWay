@@ -12,6 +12,11 @@ import { createServerClient } from '@supabase/ssr'
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // ── Fast-path: bypass API routes from middleware overhead ────────────────
+  if (pathname.startsWith('/api')) {
+    return NextResponse.next()
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -22,30 +27,52 @@ export async function middleware(request: NextRequest) {
 
   let supabaseResponse = NextResponse.next({ request })
 
-  const supabase = createServerClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll()
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-        supabaseResponse = NextResponse.next({ request })
-        cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options)
-        )
-      },
-    },
-  })
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  const allCookies = request.cookies.getAll()
+  const hasAuthCookie = allCookies.some((c) => c.name.startsWith('sb-') || c.name.includes('auth-token'))
   const hasDemoSession = request.cookies.get('pathpilot_demo_session')?.value === 'true'
+
+  let user = null
+  if (hasAuthCookie) {
+    try {
+      const supabase = createServerClient(supabaseUrl, supabaseKey, {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+            supabaseResponse = NextResponse.next({ request })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            )
+          },
+        },
+      })
+
+      // Strict 1.5s timeout for auth resolution so pages never lag
+      const authResult: any = await Promise.race([
+        supabase.auth.getUser(),
+        new Promise((resolve) => setTimeout(() => resolve({ data: { user: null } }), 1500)),
+      ])
+      user = authResult?.data?.user || null
+    } catch {
+      user = null
+    }
+  }
+
   const isAuthenticated = !!user || hasDemoSession
 
-  // ── Protected routes — must be signed in ──────────────────────────────────
-  const protectedPaths = [
+  // ── Role & Verification Status Resolution ─────────────────────────────────
+  const role = (user?.user_metadata?.role || request.cookies.get('pathpilot_user_role')?.value || 'student') as 'student' | 'mentor' | 'admin'
+  const mentorStatus = user?.user_metadata?.mentor_status || 'approved'
+  const isOnboarded = request.cookies.get('pathpilot_onboarded')?.value === 'true' ||
+    user?.user_metadata?.onboarding_completed === true
+
+  // ── Route Categorization ──────────────────────────────────────────────────
+  const isMentorRoute = pathname.startsWith('/mentor') && !pathname.startsWith('/mentor/sign-in') && !pathname.startsWith('/mentor/sign-up')
+  
+  const studentPaths = [
+    '/student',
     '/dashboard',
     '/onboarding',
     '/resume',
@@ -56,47 +83,78 @@ export async function middleware(request: NextRequest) {
     '/consultations',
     '/profile',
   ]
+  const isStudentRoute = studentPaths.some((p) => pathname === p || pathname.startsWith(p + '/')) &&
+    !pathname.startsWith('/student/sign-in') &&
+    !pathname.startsWith('/student/sign-up')
 
-  const isProtected = protectedPaths.some((p) => pathname.startsWith(p))
-
-  if (isProtected && !isAuthenticated) {
-    const redirectUrl = new URL('/sign-in', request.url)
-    redirectUrl.searchParams.set('redirect', pathname)
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  // ── Auth pages — redirect if already signed in with a real Supabase account ─────────────────────────────
-  const authPaths = ['/sign-in', '/sign-up']
-  const isAuthPage = authPaths.some((p) => pathname.startsWith(p))
+  const authPaths = [
+    '/sign-in',
+    '/sign-up',
+    '/student/sign-in',
+    '/student/sign-up',
+    '/mentor/sign-in',
+    '/mentor/sign-up',
+  ]
+  const isAuthPage = authPaths.some((p) => pathname === p || pathname.startsWith(p + '/'))
   const isSwitchingAccount = request.nextUrl.searchParams.get('switch') === 'true'
 
-  // Only redirect away from /sign-in or /sign-up if there is an ACTUAL verified user session
-  // and the user is not explicitly requesting to switch accounts
-  const isOnboarded = request.cookies.get('pathpilot_onboarded')?.value === 'true' ||
-    user?.user_metadata?.onboarding_completed === true
-
-  if (isAuthPage && !!user && !isSwitchingAccount) {
-    if (isOnboarded) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    } else {
-      return NextResponse.redirect(new URL('/onboarding', request.url))
+  // ── 1. Unauthenticated Route Protection ───────────────────────────────────
+  if (!isAuthenticated) {
+    if (isMentorRoute) {
+      const redirectUrl = new URL('/mentor/sign-in', request.url)
+      redirectUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+    if (isStudentRoute) {
+      const redirectUrl = new URL('/student/sign-in', request.url)
+      redirectUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(redirectUrl)
     }
   }
 
-  // ── Redirect authenticated users to onboarding if not completed ───────────
-  // Only for dashboard and other main pages (not onboarding itself)
-  if (isAuthenticated && !!user && pathname !== '/onboarding') {
-    const mainPages = ['/dashboard', '/resume', '/careers', '/roadmap', '/mentors', '/book', '/consultations', '/profile']
-    const isMainPage = mainPages.some((p) => pathname.startsWith(p))
+  // ── 2. Authenticated Role-Based Cross-Portal Protection ───────────────────
+  if (isAuthenticated && !isSwitchingAccount) {
+    // A: Prevent Student accounts from accessing Mentor portal
+    if (role === 'student' && isMentorRoute) {
+      const redirectUrl = new URL('/student/dashboard', request.url)
+      redirectUrl.searchParams.set('notice', 'mentor_access_denied')
+      return NextResponse.redirect(redirectUrl)
+    }
 
-    if (isMainPage && !isOnboarded) {
+    // B: Prevent Mentor accounts from accessing Student portal
+    if (role === 'mentor' && isStudentRoute) {
+      const redirectUrl = new URL('/mentor/dashboard', request.url)
+      redirectUrl.searchParams.set('notice', 'student_access_denied')
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // C: Mentor Verification Status Flow
+    if (role === 'mentor' && mentorStatus === 'pending_approval' && pathname === '/mentor/dashboard') {
+      const redirectUrl = new URL('/mentor/profile', request.url)
+      redirectUrl.searchParams.set('notice', 'pending_approval')
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // D: Redirect already authenticated users away from Auth pages
+    if (isAuthPage && !!user) {
+      if (role === 'mentor') {
+        const dest = mentorStatus === 'pending_approval' ? '/mentor/profile' : '/mentor/dashboard'
+        return NextResponse.redirect(new URL(dest, request.url))
+      } else {
+        const dest = isOnboarded ? '/student/dashboard' : '/onboarding'
+        return NextResponse.redirect(new URL(dest, request.url))
+      }
+    }
+
+    // E: If student is not onboarded and tries to access student features (except onboarding itself)
+    if (role === 'student' && !isOnboarded && isStudentRoute && pathname !== '/onboarding') {
       return NextResponse.redirect(new URL('/onboarding', request.url))
     }
-  }
 
-  // ── If already onboarded and visits /onboarding, take directly to dashboard ─
-  if (isAuthenticated && !!user && pathname === '/onboarding' && isOnboarded) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    // F: If student is already onboarded and visits /onboarding, take directly to dashboard
+    if (role === 'student' && isOnboarded && pathname === '/onboarding') {
+      return NextResponse.redirect(new URL('/student/dashboard', request.url))
+    }
   }
 
   return supabaseResponse

@@ -153,7 +153,15 @@ export function Sidebar({
         {/* Navigation */}
         <nav style={{ flex: 1, padding: '8px 0' }}>
           {navItems.map(({ href, label, icon: Icon }) => {
-            const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
+            const isActive =
+              pathname === href ||
+              (href !== '/dashboard' && pathname.startsWith(href)) ||
+              (href === '/dashboard' && pathname === '/student/dashboard') ||
+              (href === '/resume' && pathname.startsWith('/student/resume')) ||
+              (href === '/careers' && pathname.startsWith('/student/career')) ||
+              (href === '/mentors' && pathname.startsWith('/student/mentor')) ||
+              (href === '/consultations' && pathname.startsWith('/student/booking')) ||
+              (href === '/profile' && pathname.startsWith('/student/profile'))
             return (
               <Link
                 key={href}
