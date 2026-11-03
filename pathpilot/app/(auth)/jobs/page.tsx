@@ -240,41 +240,38 @@ export default function JobBoardPage() {
   const appliedCount = useMemo(() => jobs.filter((j) => !!j.application_status).length, [jobs])
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero / Header Section */}
-      <div className="border-b border-border bg-card/50">
+    <div className="min-h-screen bg-[#FAF9F6]">
+      {/* Hero / Header Section (Koyeb Developer Style) */}
+      <div className="border-b border-[#E5E3DC] bg-[#FAF9F6]">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                  </span>
-                  🇮🇳 India Jobs Prioritized • 100% Verified ATS Feeds
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-[#00F090] px-3 py-1 text-xs font-tech-mono font-bold text-black">
+                  <span className="w-1.5 h-1.5 rounded-full bg-black animate-ping" />
+                  🇮🇳 143+ INDIAN ROLES INDEXED • 100% VERIFIED ATS
                 </span>
-                <span className="text-xs text-muted-foreground hidden sm:inline">
-                  Direct recruiter ATS links • Zero dead aggregator links
+                <span className="text-xs font-tech-mono text-neutral-500 hidden sm:inline">
+                  Direct recruiter ATS links • Zero aggregator dead ends
                 </span>
               </div>
 
-              <h1 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-                India & Global Tech / APM Launchpad
+              <h1 className="font-display text-4xl sm:text-5xl text-[#0C0D0E] uppercase tracking-tight leading-[0.92]">
+                INDIA TECH &amp; APM JOB INTELLIGENCE
               </h1>
-              <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
-                Verified fresher, entry-level, APM, and junior software engineer opportunities across India's top tech companies and global remote teams.
+              <p className="font-sans mt-1.5 max-w-2xl text-sm text-neutral-600">
+                Verified fresher, early-career, APM, and junior software engineer opportunities across India's top tech employers, monitored every 12h.
               </p>
             </div>
 
             {/* Quick Stats & Sync */}
             <div className="flex items-center gap-3">
-              <div className="flex flex-col items-end text-right">
-                <span className="text-2xl font-black text-foreground">
+              <div className="flex flex-col items-end text-right font-tech-mono">
+                <span className="font-display text-4xl text-[#0C0D0E] font-black leading-none">
                   {filteredJobs.length}
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  {selectedRegion === 'India' ? '🇮🇳 Active India Roles' : selectedRegion === 'Global' ? '🌍 Global Roles' : 'Active Opportunities'}
+                <span className="text-[11px] text-neutral-500 uppercase mt-0.5">
+                  {selectedRegion === 'India' ? '🇮🇳 Indian Roles' : selectedRegion === 'Global' ? '🌍 Global Roles' : 'Total Opportunities'}
                 </span>
               </div>
 
@@ -282,19 +279,19 @@ export default function JobBoardPage() {
                 type="button"
                 onClick={handleRefresh}
                 disabled={isRefreshing}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2.5 text-xs font-semibold text-foreground shadow-xs hover:bg-muted active:scale-95 disabled:opacity-50 transition-all"
+                className="koyeb-btn-black px-3.5 py-2.5 rounded-lg text-xs font-tech-mono inline-flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
                 title="Refresh listings"
               >
-                <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin text-primary")} />
-                <span>Refresh</span>
+                <RefreshCw className={cn("h-3.5 w-3.5 text-[#00F090]", isRefreshing && "animate-spin")} />
+                <span>SYNC FEED</span>
               </button>
             </div>
           </div>
 
           {/* Region Tabs (India First!) + View Mode */}
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-border/60 pt-4">
-            {/* Region Segmented Controls (India first by default) */}
-            <div className="inline-flex rounded-xl border border-border bg-muted/40 p-1 text-xs font-semibold">
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-[#E5E3DC] pt-4 font-tech-mono text-xs">
+            {/* Region Segmented Controls */}
+            <div className="inline-flex rounded-lg border border-[#E5E3DC] bg-[#FAF9F6] p-1 font-bold">
               <button
                 type="button"
                 onClick={() => {
@@ -302,12 +299,12 @@ export default function JobBoardPage() {
                   setSelectedCity('All')
                 }}
                 className={cn(
-                  "rounded-lg px-4 py-1.5 transition-all flex items-center gap-1.5",
-                  selectedRegion === 'India' ? "bg-card text-foreground shadow-xs font-bold" : "text-muted-foreground hover:text-foreground"
+                  "rounded-md px-4 py-1.5 transition-all flex items-center gap-1.5 cursor-pointer uppercase",
+                  selectedRegion === 'India' ? "bg-black text-[#00F090] shadow-xs" : "text-neutral-600 hover:text-black"
                 )}
               >
-                <span>🇮🇳 India Roles</span>
-                <span className="rounded-full bg-primary/10 text-primary px-1.5 py-0.2 text-[10px] font-bold">Default</span>
+                <span>🇮🇳 INDIA ROLES</span>
+                <span className="rounded bg-[#00F090] text-black px-1.5 py-0.2 text-[9px] font-extrabold">DEFAULT</span>
               </button>
               <button
                 type="button"
@@ -316,11 +313,11 @@ export default function JobBoardPage() {
                   setSelectedCity('All')
                 }}
                 className={cn(
-                  "rounded-lg px-4 py-1.5 transition-all flex items-center gap-1.5",
-                  selectedRegion === 'Global' ? "bg-card text-foreground shadow-xs font-bold" : "text-muted-foreground hover:text-foreground"
+                  "rounded-md px-4 py-1.5 transition-all flex items-center gap-1.5 cursor-pointer uppercase",
+                  selectedRegion === 'Global' ? "bg-black text-[#00F090] shadow-xs" : "text-neutral-600 hover:text-black"
                 )}
               >
-                <span>🌍 Global & Remote</span>
+                <span>🌍 GLOBAL / REMOTE</span>
               </button>
               <button
                 type="button"
@@ -329,11 +326,11 @@ export default function JobBoardPage() {
                   setSelectedCity('All')
                 }}
                 className={cn(
-                  "rounded-lg px-4 py-1.5 transition-all",
-                  selectedRegion === 'All' ? "bg-card text-foreground shadow-xs font-bold" : "text-muted-foreground hover:text-foreground"
+                  "rounded-md px-4 py-1.5 transition-all cursor-pointer uppercase",
+                  selectedRegion === 'All' ? "bg-black text-[#00F090] shadow-xs" : "text-neutral-600 hover:text-black"
                 )}
               >
-                🌐 All Regions
+                🌐 ALL REGIONS
               </button>
             </div>
 
@@ -343,35 +340,31 @@ export default function JobBoardPage() {
                 type="button"
                 onClick={() => setViewMode('all')}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
-                  viewMode === 'all' ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  "rounded-md px-3.5 py-1.5 font-bold uppercase transition-colors cursor-pointer",
+                  viewMode === 'all' ? "bg-black text-white" : "text-neutral-600 hover:text-black bg-white border border-[#E5E3DC]"
                 )}
               >
-                All Jobs
+                ALL ({jobs.length})
               </button>
-
               <button
                 type="button"
                 onClick={() => setViewMode('saved')}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5",
-                  viewMode === 'saved' ? "bg-amber-500 text-white" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  "rounded-md px-3.5 py-1.5 font-bold uppercase transition-colors cursor-pointer",
+                  viewMode === 'saved' ? "bg-black text-white" : "text-neutral-600 hover:text-black bg-white border border-[#E5E3DC]"
                 )}
               >
-                <Bookmark className="h-3.5 w-3.5" />
-                <span>Saved ({savedCount})</span>
+                SAVED ({savedCount})
               </button>
-
               <button
                 type="button"
                 onClick={() => setViewMode('applied')}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5",
-                  viewMode === 'applied' ? "bg-emerald-600 text-white" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  "rounded-md px-3.5 py-1.5 font-bold uppercase transition-colors cursor-pointer",
+                  viewMode === 'applied' ? "bg-black text-white" : "text-neutral-600 hover:text-black bg-white border border-[#E5E3DC]"
                 )}
               >
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Applied ({appliedCount})</span>
+                APPLIED ({appliedCount})
               </button>
             </div>
           </div>

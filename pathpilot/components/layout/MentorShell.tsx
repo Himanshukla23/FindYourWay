@@ -45,7 +45,7 @@ export function MentorShell({ children, pageTitle }: MentorShellProps) {
   }, [])
 
   return (
-    <div className="app-layout" style={{ background: '#F8FAFC', minHeight: '100vh' }}>
+    <div className="app-layout" style={{ background: '#FAF9F6', minHeight: '100vh' }}>
       <Suspense fallback={<aside className="sidebar" />}>
         <MentorSidebar
           isOpen={sidebarOpen}

@@ -174,18 +174,18 @@ export default function MentorsPage() {
     searchQuery.trim().length > 0
 
   return (
-    <div className="page-container animate-fade-in space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* ── Page Header ────────────────────────────────────────────── */}
-      <div className="border-b border-slate-200 pb-5">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">
-          <Users className="w-3.5 h-3.5 text-blue-600" />
-          Industry Mentorship Network
+    <div className="page-container space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* ── Page Header (Koyeb Condensed Typography) ────────────────── */}
+      <div className="border-b border-[#E5E3DC] pb-5">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-[#E5E3DC] shadow-2xs font-tech-mono text-[10px] font-semibold text-neutral-800 tracking-wider mb-2">
+          <span className="w-2 h-2 rounded-full bg-[#00F090] animate-pulse" />
+          <span>// VERIFIED TECH LEADERS &amp; HIRING MANAGERS</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-          Find the right mentor for your next career move.
+        <h1 className="font-display text-4xl sm:text-5xl text-[#0C0D0E] uppercase tracking-tight leading-[0.95]">
+          INDUSTRY MENTOR ADVISORY NETWORK
         </h1>
-        <p className="text-slate-600 text-sm mt-1 max-w-3xl leading-relaxed">
-          Connect with experienced professionals for career guidance, resume reviews, technical discussions, and mock interviews.
+        <p className="font-sans text-neutral-600 text-sm mt-1 max-w-3xl leading-relaxed">
+          Connect 1-on-1 with verified engineering leaders and product managers from top tech companies for resume teardowns, system design critiques, and placement strategies.
         </p>
       </div>
 

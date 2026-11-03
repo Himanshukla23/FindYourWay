@@ -11,8 +11,6 @@ import {
   Briefcase,
   X,
   LogOut,
-  ChevronRight,
-  ShieldCheck,
   Sparkles,
   Compass,
   ArrowRightLeft,
@@ -80,7 +78,7 @@ export function MentorSidebar({
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs z-30 md:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -91,318 +89,166 @@ export function MentorSidebar({
         {/* Header / Brand */}
         <div
           style={{
-            padding: '20px 20px 16px',
-            borderBottom: '1px solid #F1F5F9',
+            padding: '20px 18px 16px',
+            borderBottom: '1px solid #E5E3DC',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
           <Link href="/mentor/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                background: '#4F46E5',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-              }}
-            >
-              <Briefcase size={18} />
+            <div className="w-8 h-8 rounded-lg bg-[#0C0D0E] flex items-center justify-center text-white shadow-xs">
+              <Sparkles className="w-4 h-4 text-[#00F090]" />
             </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0F172A', letterSpacing: '-0.02em' }}>
-                  PathPilot
-                </span>
-                <span
-                  style={{
-                    fontSize: '0.625rem',
-                    fontWeight: 800,
-                    padding: '2px 6px',
-                    borderRadius: 4,
-                    background: '#EEF2FF',
-                    color: '#4F46E5',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  MENTOR
-                </span>
-              </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-display text-xl tracking-tighter text-[#0C0D0E]">
+                PATHPILOT
+              </span>
+              <span className="font-tech-mono text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#00F090] text-black uppercase tracking-wider">
+                MENTOR
+              </span>
             </div>
           </Link>
 
           <button
             onClick={onClose}
-            className="md:hidden"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#94A3B8',
-              padding: 4,
-            }}
+            className="btn btn-ghost btn-icon md:hidden text-neutral-500 hover:text-black"
             aria-label="Close menu"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Verification Status Pill */}
-        <div style={{ padding: '12px 16px 8px' }}>
-          <div
-            style={{
-              padding: '8px 12px',
-              borderRadius: 10,
-              background: isApproved ? '#F0FDF4' : '#FFFBEB',
-              border: `1px solid ${isApproved ? '#BBF7D0' : '#FDE68A'}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: '0.75rem',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  background: isApproved ? '#16A34A' : '#D97706',
-                }}
-              />
-              <span style={{ fontWeight: 700, color: isApproved ? '#166534' : '#92400E' }}>
-                {isApproved ? 'Verified Mentor' : 'Review Pending'}
-              </span>
+        {/* Verification Status Pill (Koyeb Dark Card) */}
+        <div style={{ padding: '12px 14px 6px' }}>
+          <div className="rounded-lg bg-[#0C0D0E] border border-neutral-800 p-3 shadow-xs font-tech-mono">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] text-[#00F090] font-bold tracking-wider">// STATUS</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${isApproved ? 'bg-[#00F090] animate-pulse' : 'bg-amber-400'}`} />
             </div>
-            <Link
-              href="/mentor/profile"
-              style={{
-                fontSize: '0.6875rem',
-                color: isApproved ? '#15803D' : '#B45309',
-                fontWeight: 600,
-                textDecoration: 'none',
-              }}
-            >
-              Status &rarr;
-            </Link>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-white uppercase truncate">
+                {isApproved ? 'VERIFIED MENTOR' : 'REVIEW PENDING'}
+              </span>
+              <Link href="/mentor/profile" className="text-[10px] text-[#00F090] hover:underline font-bold">
+                VIEW →
+              </Link>
+            </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav style={{ padding: '8px 12px', flex: 1 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <nav style={{ padding: '10px 0', flex: 1 }}>
+          <div className="flex flex-col gap-1">
             {mentorNavItems.map(({ href, label, icon: Icon }) => {
               const active = pathname === href || pathname.startsWith(href + '/')
-              function handleSwitchToStudent() {
-    document.cookie = 'pathpilot_user_role=student; path=/; max-age=2592000'
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('pathpilot_user_role', 'student')
-    }
-    window.location.href = '/dashboard'
-  }
-
-  return (
+              return (
                 <Link
                   key={href}
                   href={href}
                   onClick={onClose}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '10px 14px',
-                    borderRadius: 10,
-                    textDecoration: 'none',
-                    fontSize: '0.875rem',
-                    fontWeight: active ? 700 : 500,
-                    color: active ? '#4F46E5' : '#475569',
-                    background: active ? '#EEF2FF' : 'transparent',
-                    transition: 'all 0.15s ease',
-                  }}
+                  className={cn('nav-item', active && 'active')}
                 >
-                  <Icon size={18} color={active ? '#4F46E5' : '#64748B'} />
-                  <span>{label}</span>
+                  <Icon size={16} className={active ? 'text-[#00F090]' : 'text-neutral-500'} />
+                  <span style={{ flex: 1 }}>{label}</span>
+                  {active && <span className="font-tech-mono text-[10px] text-[#00F090] font-bold">◂</span>}
                 </Link>
               )
             })}
 
-            {/* Platform Explorer Section */}
-            <div style={{ margin: '14px 12px 6px', paddingTop: 12, borderTop: '1px solid #F1F5F9' }}>
-              <div style={{ color: '#94A3B8', fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 4 }}>
-                Platform &amp; Jobs
-              </div>
+            {/* Quick Explore Links */}
+            <div style={{ margin: '12px 14px 4px', paddingTop: 10, borderTop: '1px solid #E5E3DC' }}>
+              <span className="font-tech-mono text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-2">
+                // PLATFORM FEEDS
+              </span>
             </div>
 
             <Link
               href="/jobs"
               onClick={onClose}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '9px 12px',
-                borderRadius: 10,
-                textDecoration: 'none',
-                fontSize: '0.875rem',
-                fontWeight: pathname === '/jobs' ? 700 : 500,
-                color: pathname === '/jobs' ? '#059669' : '#475569',
-                background: pathname === '/jobs' ? '#ECFDF5' : 'transparent',
-                transition: 'all 0.15s ease',
-              }}
+              className="nav-item"
             >
-              <Briefcase size={18} color={pathname === '/jobs' ? '#059669' : '#64748B'} />
+              <Briefcase size={16} className="text-neutral-500" />
               <span style={{ flex: 1 }}>Job Board</span>
-              <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#059669', background: '#D1FAE5', padding: '1px 6px', borderRadius: 6 }}>140+</span>
+              <span className="font-tech-mono text-[10px] px-1.5 py-0.5 rounded bg-[#0C0D0E] text-[#00F090] font-bold">143+</span>
             </Link>
 
             <Link
               href="/careers"
               onClick={onClose}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '9px 12px',
-                borderRadius: 10,
-                textDecoration: 'none',
-                fontSize: '0.875rem',
-                fontWeight: pathname === '/careers' ? 700 : 500,
-                color: pathname === '/careers' ? '#2563EB' : '#475569',
-                background: pathname === '/careers' ? '#EFF6FF' : 'transparent',
-                transition: 'all 0.15s ease',
-              }}
+              className="nav-item"
             >
-              <Compass size={18} color={pathname === '/careers' ? '#2563EB' : '#64748B'} />
+              <Compass size={16} className="text-neutral-500" />
               <span>Career Tracks</span>
             </Link>
 
             <Link
               href="/"
               onClick={onClose}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '9px 12px',
-                borderRadius: 10,
-                textDecoration: 'none',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                color: '#475569',
-                background: 'transparent',
-                transition: 'all 0.15s ease',
-              }}
+              className="nav-item"
             >
-              <Globe size={18} color="#64748B" />
+              <Globe size={16} className="text-neutral-500" />
               <span>Landing Page</span>
             </Link>
+
+            {/* Switch to Student Portal */}
+            <div style={{ padding: '10px 14px' }}>
+              <button
+                onClick={handleSwitchToStudent}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md border border-[#E5E3DC] bg-white hover:bg-[#FAF9F6] text-neutral-800 text-xs font-tech-mono font-bold tracking-wider transition-all cursor-pointer"
+              >
+                <ArrowRightLeft size={13} className="text-neutral-500" />
+                <span>SWITCH TO STUDENT</span>
+              </button>
+            </div>
           </div>
         </nav>
 
-        {/* User Card & Sign Out */}
-        <div style={{ padding: '12px 16px', borderTop: '1px solid #F1F5F9' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 10,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-              <div
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 10,
-                  background: '#EEF2FF',
-                  border: '1px solid #C7D2FE',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 700,
-                  fontSize: '0.8125rem',
-                  color: '#4F46E5',
-                  flexShrink: 0,
-                }}
-              >
-                {getInitials(mentorName)}
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <p
-                  style={{
-                    fontSize: '0.8125rem',
-                    fontWeight: 700,
-                    color: '#0F172A',
-                    margin: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {mentorName}
-                </p>
-                <p
-                  style={{
-                    fontSize: '0.6875rem',
-                    color: '#64748B',
-                    margin: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {mentorTitle}
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={handleSignOut}
+        {/* User Info Footer */}
+        <div
+          style={{
+            padding: '14px 16px',
+            borderTop: '1px solid #E5E3DC',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            backgroundColor: '#FAF9F6',
+          }}
+        >
+          {mentorAvatar ? (
+            <img
+              src={mentorAvatar}
+              alt={mentorName}
               style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#94A3B8',
-                padding: 6,
-                borderRadius: 6,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                width: 34,
+                height: 34,
+                borderRadius: '8px',
+                objectFit: 'cover',
+                flexShrink: 0,
+                border: '1.5px solid #0C0D0E',
               }}
-              title="Sign out"
-            >
-              <LogOut size={16} />
-            </button>
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-[#0C0D0E] text-[#00F090] font-display flex items-center justify-center text-xs font-black shrink-0">
+              {getInitials(mentorName)}
+            </div>
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: '#0C0D0E', fontWeight: 700, fontSize: '0.8125rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {mentorName}
+            </div>
+            <div className="font-tech-mono text-[10px] text-neutral-500 truncate mt-0.5">
+              {mentorTitle}
+            </div>
           </div>
 
-          {/* Switch to Student Portal View */}
           <button
-            onClick={handleSwitchToStudent}
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              padding: '7px 10px',
-              borderRadius: 8,
-              background: '#F8FAFC',
-              border: '1px solid #E2E8F0',
-              color: '#334155',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-            title="Switch to Student Portal view"
+            onClick={handleSignOut}
+            title="Sign out"
+            aria-label="Sign out"
+            className="p-1.5 rounded-md hover:bg-neutral-200 text-neutral-400 hover:text-black transition-colors"
           >
-            <ArrowRightLeft size={13} className="text-blue-600" />
-            <span>Switch to Student View</span>
+            <LogOut size={15} />
           </button>
         </div>
       </aside>

@@ -11,7 +11,7 @@ import {
   Calendar,
   Briefcase,
   User,
-  Zap,
+  Sparkles,
   X,
   ChevronRight,
   LogOut,
@@ -20,10 +20,10 @@ import { cn, getInitials } from '@/lib/utils'
 
 const navItems = [
   { href: '/dashboard',     label: 'Dashboard',       icon: LayoutDashboard },
-  { href: '/jobs',          label: 'Job Board',       icon: Briefcase },
-  { href: '/resume',        label: 'Resume Analysis', icon: FileText },
-  { href: '/careers',       label: 'Explore Careers', icon: Compass },
-  { href: '/roadmap',       label: 'Career Roadmap',  icon: Map },
+  { href: '/jobs',          label: 'Job Board (143+)',icon: Briefcase },
+  { href: '/resume',        label: 'Resume Audit',    icon: FileText },
+  { href: '/careers',       label: 'Career Tracks',   icon: Compass },
+  { href: '/roadmap',       label: 'Preparation Map', icon: Map },
   { href: '/mentors',       label: 'Find Mentors',    icon: Users },
   { href: '/consultations', label: 'My Sessions',     icon: Calendar },
   { href: '/profile',       label: 'My Profile',      icon: User },
@@ -50,10 +50,7 @@ export function Sidebar({
 
   async function handleSignOut() {
     try {
-      // 1. Trigger server-side cookie deletion
       await fetch('/api/auth/signout', { method: 'POST' }).catch(() => {})
-
-      // 2. Clear client Supabase session if present
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
       if (supabase) {
@@ -62,7 +59,6 @@ export function Sidebar({
     } catch (e) {
       console.error('Error signing out:', e)
     } finally {
-      // 3. Clear client-side demo cookies and storage
       document.cookie = 'pathpilot_demo_session=; path=/; max-age=0'
       document.cookie = 'pathpilot_onboarded=; path=/; max-age=0'
       if (typeof window !== 'undefined') {
@@ -78,75 +74,57 @@ export function Sidebar({
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-xs z-30 md:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar with Koyeb Design */}
       <aside className={cn('sidebar', isOpen && 'open')} aria-label="Main navigation">
-        {/* Logo */}
+        {/* Logo Header */}
         <div
           style={{
-            padding: '20px 20px 16px',
-            borderBottom: '1px solid #F1F5F9',
+            padding: '20px 18px 16px',
+            borderBottom: '1px solid #E5E3DC',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
           }}
         >
           <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                background: 'linear-gradient(135deg, #1A73E8, #4285F4)',
-                borderRadius: 10,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 6px rgba(26,115,232,0.25)',
-              }}
-            >
-              <Zap size={18} color="white" fill="white" />
+            <div className="w-8 h-8 rounded-lg bg-[#0C0D0E] flex items-center justify-center text-white shadow-xs">
+              <Sparkles className="w-4 h-4 text-[#00F090]" />
             </div>
-            <div>
-              <div style={{ color: '#0F172A', fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
-                PathPilot
-              </div>
-              <div style={{ color: '#1A73E8', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.06em' }}>
-                AI GUIDANCE
-              </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-display text-xl tracking-tighter text-[#0C0D0E]">
+                PATHPILOT
+              </span>
+              <span className="font-tech-mono text-[9px] font-bold px-1.5 py-0.5 rounded bg-black text-[#00F090] uppercase tracking-wider">
+                v2.4
+              </span>
             </div>
           </Link>
 
           {/* Close button — mobile only */}
           <button
             onClick={onClose}
-            className="btn btn-ghost btn-icon md:hidden"
-            style={{ color: '#64748B' }}
+            className="btn btn-ghost btn-icon md:hidden text-neutral-500 hover:text-black"
             aria-label="Close navigation"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Target role pill */}
+        {/* Target role box (Koyeb Dark Developer Pill) */}
         {targetRole && (
-          <div style={{ padding: '12px 16px' }}>
-            <div
-              style={{
-                background: '#E8F0FE',
-                border: '1px solid #D2E3FC',
-                borderRadius: 10,
-                padding: '8px 12px',
-              }}
-            >
-              <div style={{ color: '#1A73E8', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.06em', marginBottom: 2 }}>
-                TARGET ROLE
+          <div style={{ padding: '12px 14px 6px' }}>
+            <div className="rounded-lg bg-[#0C0D0E] border border-neutral-800 p-3 shadow-xs font-tech-mono">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] text-[#00F090] font-bold tracking-wider">// TARGET ROLE</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00F090] animate-pulse" />
               </div>
-              <div style={{ color: '#0F172A', fontSize: '0.8rem', fontWeight: 600, lineHeight: 1.3 }}>
+              <div className="text-xs font-bold text-white uppercase tracking-tight truncate">
                 {targetRole}
               </div>
             </div>
@@ -154,7 +132,7 @@ export function Sidebar({
         )}
 
         {/* Navigation */}
-        <nav style={{ flex: 1, padding: '8px 0' }}>
+        <nav style={{ flex: 1, padding: '10px 0' }}>
           {navItems.map(({ href, label, icon: Icon }) => {
             const isActive =
               pathname === href ||
@@ -172,9 +150,13 @@ export function Sidebar({
                 className={cn('nav-item', isActive && 'active')}
                 onClick={onClose}
               >
-                <Icon size={18} />
+                <Icon size={16} className={isActive ? 'text-[#00F090]' : 'text-neutral-500'} />
                 <span style={{ flex: 1 }}>{label}</span>
-                {isActive && <ChevronRight size={14} style={{ opacity: 0.6 }} />}
+                {isActive ? (
+                  <span className="font-tech-mono text-[10px] text-[#00F090] font-bold">◂</span>
+                ) : (
+                  <ChevronRight size={12} className="opacity-40" />
+                )}
               </Link>
             )
           })}
@@ -183,11 +165,12 @@ export function Sidebar({
         {/* User info at bottom */}
         <div
           style={{
-            padding: '16px',
-            borderTop: '1px solid #F1F5F9',
+            padding: '14px 16px',
+            borderTop: '1px solid #E5E3DC',
             display: 'flex',
             alignItems: 'center',
             gap: 10,
+            backgroundColor: '#FAF9F6',
           }}
         >
           {userAvatar ? (
@@ -195,25 +178,25 @@ export function Sidebar({
               src={userAvatar}
               alt={userName}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
+                width: 34,
+                height: 34,
+                borderRadius: '8px',
                 objectFit: 'cover',
                 flexShrink: 0,
-                border: '1.5px solid #D2E3FC',
+                border: '1.5px solid #0C0D0E',
               }}
             />
           ) : (
-            <div className="avatar avatar-md" style={{ flexShrink: 0, background: '#E8F0FE', color: '#1A73E8', fontWeight: 700 }}>
+            <div className="w-8 h-8 rounded-lg bg-[#0C0D0E] text-[#00F090] font-display flex items-center justify-center text-xs font-black shrink-0">
               {getInitials(userName)}
             </div>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#0F172A', fontWeight: 600, fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ color: '#0C0D0E', fontWeight: 700, fontSize: '0.8125rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {userName}
             </div>
             {userEmail && (
-              <div style={{ color: '#64748B', fontSize: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div className="font-tech-mono text-[10px] text-neutral-500 truncate mt-0.5">
                 {userEmail}
               </div>
             )}
@@ -224,28 +207,9 @@ export function Sidebar({
             onClick={handleSignOut}
             title="Sign out / Switch account"
             aria-label="Sign out"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#94A3B8',
-              padding: 8,
-              borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 150ms ease',
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.color = '#DC2626'
-              e.currentTarget.style.background = '#FEE2E2'
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.color = '#94A3B8'
-              e.currentTarget.style.background = 'transparent'
-            }}
+            className="p-1.5 rounded-md hover:bg-neutral-200 text-neutral-400 hover:text-black transition-colors"
           >
-            <LogOut size={16} />
+            <LogOut size={15} />
           </button>
         </div>
       </aside>
