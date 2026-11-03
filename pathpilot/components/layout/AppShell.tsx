@@ -82,10 +82,12 @@ export function AppShell({
         />
       </Suspense>
       <div className="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Topbar
-          onMenuClick={() => setSidebarOpen(true)}
-          pageTitle={pageTitle}
-        />
+        <Suspense fallback={<div style={{ height: 'var(--topbar-height)', background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }} />}>
+          <Topbar
+            onMenuClick={() => setSidebarOpen(true)}
+            pageTitle={pageTitle}
+          />
+        </Suspense>
         <main style={{ flex: 1 }}>
           {children}
         </main>

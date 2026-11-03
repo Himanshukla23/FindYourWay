@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { MentorSidebar } from './MentorSidebar'
 import { Topbar } from './Topbar'
 
@@ -46,20 +46,24 @@ export function MentorShell({ children, pageTitle }: MentorShellProps) {
 
   return (
     <div className="app-layout" style={{ background: '#F8FAFC', minHeight: '100vh' }}>
-      <MentorSidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        mentorName={profile.name}
-        mentorEmail={profile.email}
-        mentorTitle={profile.title}
-        isApproved={profile.isApproved}
-      />
+      <Suspense fallback={<aside className="sidebar" />}>
+        <MentorSidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          mentorName={profile.name}
+          mentorEmail={profile.email}
+          mentorTitle={profile.title}
+          isApproved={profile.isApproved}
+        />
+      </Suspense>
 
       <div className="main-content">
-        <Topbar
-          onMenuClick={() => setSidebarOpen(true)}
-          pageTitle="Mentor Portal"
-        />
+        <Suspense fallback={<div style={{ height: 'var(--topbar-height)', background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }} />}>
+          <Topbar
+            onMenuClick={() => setSidebarOpen(true)}
+            pageTitle={pageTitle || "Mentor Portal"}
+          />
+        </Suspense>
 
         <main className="content-area" style={{ padding: '24px' }}>
           {children}
