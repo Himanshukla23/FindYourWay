@@ -100,44 +100,44 @@ function CompanyPill({ company }: { company: CompanyItem }) {
 
 export function CompanyConnectionsMarquee() {
   return (
-    <section className="relative py-16 sm:py-20 bg-gradient-to-b from-white via-slate-50/50 to-white overflow-hidden border-b border-slate-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 text-center sm:text-left">
+    <section className="relative py-16 sm:py-24 bg-[#FAF9F6] bg-koyeb-grid overflow-hidden border-y border-[#E5E3DC]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 text-center sm:text-left">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-              <span>LIVE ATS INGESTION & PIPELINE</span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#D1FAE5] border border-[#6EE7B7] text-[#065F46] font-tech-mono text-[11px] font-bold tracking-wider mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+              <span>/ LIVE ATS RADAR</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight">
-              Our Connections
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display text-[#0A0A0C] tracking-tight leading-none">
+              OUR CONNECTIONS
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-xl">
+            <p className="font-sans text-xs sm:text-sm text-[#575960] mt-2 max-w-xl leading-relaxed">
               Continuously monitoring career portals and direct ATS pipelines every 6 to 12 hours. Zero dead aggregator listings.
             </p>
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 font-medium">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+          <div className="hidden sm:flex items-center gap-2 font-tech-mono text-xs text-[#575960] font-semibold bg-white px-3 py-1.5 rounded-lg border border-[#E5E3DC] shadow-2xs">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00F090] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00F090]"></span>
             </span>
-            <span>Live Sync Active</span>
+            <span>LIVE SYNC ACTIVE</span>
           </div>
         </div>
       </div>
 
-      {/* Centered Glowing Hero Badge (Exactly matching user reference image) */}
-      <div className="flex justify-center mb-8 px-4">
+      {/* Centered Glowing Hero Badge (Exact match to reference image) */}
+      <div className="flex justify-center mb-10 px-4">
         <div className="relative group">
           {/* Outer glow effect */}
-          <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600 opacity-40 blur-lg group-hover:opacity-60 transition duration-500" />
+          <div className="absolute -inset-1.5 rounded-3xl bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600 opacity-40 blur-xl group-hover:opacity-70 transition duration-500" />
 
           {/* Main Card */}
-          <div className="relative rounded-2xl bg-gradient-to-b from-[#0B63E5] to-[#0447A8] px-10 sm:px-14 py-4 sm:py-5 text-center shadow-xl border border-blue-400/30">
-            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight drop-shadow-sm">
+          <div className="relative rounded-2xl bg-gradient-to-b from-[#0B63E5] to-[#0447A8] px-12 sm:px-16 py-4 sm:py-5 text-center shadow-[0_12px_36px_rgba(11,99,229,0.35)] border border-blue-400/30">
+            <div className="font-display text-4xl sm:text-5xl font-black text-white tracking-tight drop-shadow-sm">
               143
             </div>
-            <div className="text-xs sm:text-sm font-semibold text-blue-100 tracking-wide mt-0.5">
+            <div className="font-tech-mono text-[11px] sm:text-xs font-semibold text-blue-100 tracking-wider uppercase mt-1">
               Indian Companies Total Connection
             </div>
           </div>
@@ -147,10 +147,10 @@ export function CompanyConnectionsMarquee() {
       {/* Marquee Wrapper with Smooth Left & Right Gradient Masks */}
       <div className="relative w-full overflow-hidden space-y-3.5 marquee-row">
         {/* Left Gradient Fade */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-28 bg-gradient-to-r from-white via-white/80 to-transparent z-10" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-20 sm:w-36 bg-gradient-to-r from-[#FAF9F6] via-[#FAF9F6]/90 to-transparent z-10" />
 
         {/* Right Gradient Fade */}
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-28 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-20 sm:w-36 bg-gradient-to-l from-[#FAF9F6] via-[#FAF9F6]/90 to-transparent z-10" />
 
         {/* Row 1: Left */}
         <div className="flex overflow-hidden">
@@ -198,3 +198,4 @@ export function CompanyConnectionsMarquee() {
     </section>
   )
 }
+
