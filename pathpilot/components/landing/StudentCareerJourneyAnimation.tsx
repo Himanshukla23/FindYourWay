@@ -77,11 +77,7 @@ export function StudentCareerJourneyAnimation() {
   return (
     <div className="w-full max-w-4xl mx-auto mt-10 px-4 sm:px-6">
       {/* Outer Card with Koyeb Style Border */}
-      <div
-        className="rounded-2xl border border-neutral-800 bg-[#0C0D0E] shadow-2xl overflow-hidden font-tech-mono relative"
-        onMouseEnter={() => setIsPlaying(false)}
-        onMouseLeave={() => setIsPlaying(true)}
-      >
+      <div className="rounded-2xl border border-neutral-800 bg-[#0C0D0E] shadow-2xl overflow-hidden font-tech-mono relative">
         {/* ── Top Header Controls ────────────────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between px-4 sm:px-6 py-3.5 border-b border-neutral-800 bg-[#121316] gap-3">
           <div className="flex items-center gap-2">
@@ -360,12 +356,18 @@ export function StudentCareerJourneyAnimation() {
               </div>
 
               {/* Title */}
-              <h3 className="font-display text-3xl sm:text-4xl text-white tracking-tight uppercase leading-tight">
+              <h3
+                className="font-display text-3xl sm:text-4xl text-white tracking-tight uppercase leading-tight"
+                style={{ color: '#FFFFFF' }}
+              >
                 {STEPS[currentStep].title}
               </h3>
 
-              {/* Story Description */}
-              <p className="font-sans text-sm sm:text-base text-neutral-300 leading-relaxed max-w-xl">
+              {/* Story Description (High Contrast Bright Text) */}
+              <p
+                className="font-sans text-sm sm:text-base text-neutral-200 leading-relaxed max-w-xl"
+                style={{ color: '#E5E7EB' }}
+              >
                 {STEPS[currentStep].subtitle}
               </p>
 
@@ -445,3 +447,4 @@ export function StudentCareerJourneyAnimation() {
     </div>
   )
 }
+
