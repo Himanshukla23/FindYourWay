@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { CompanyConnectionsMarquee } from '@/components/landing/CompanyConnectionsMarquee'
+import { StudentCareerJourneyAnimation } from '@/components/landing/StudentCareerJourneyAnimation'
 import {
   Sparkles,
   ArrowRight,
@@ -148,37 +149,6 @@ const careerCategories = [
 
 export default function HomePage() {
   const [announcementClosed, setAnnouncementClosed] = useState(false)
-  const [activeTab, setActiveTab] = useState<'curl' | 'ts' | 'python'>('curl')
-  const [copied, setCopied] = useState(false)
-
-  const codeSnippets = {
-    curl: `curl -X GET "https://find-your-way-mu.vercel.app/api/jobs" \\
-  -H "Accept: application/json" \\
-  -d '{"region":"india","experience":"0-2y","status":"verified"}'`,
-    ts: `import { PathPilotAPI } from '@pathpilot/sdk'
-
-const client = new PathPilotAPI()
-const freshersJobs = await client.jobs.list({
-  region: 'india',
-  experienceMax: 2,
-  includeVerifiedATS: true,
-})
-console.log(\`Found \${freshersJobs.length} active fresher roles\`)`,
-    python: `import httpx
-
-response = httpx.get(
-    "https://find-your-way-mu.vercel.app/api/jobs",
-    params={"region": "india", "exp": "0-2"}
-)
-jobs = response.json()
-print(f"Loaded {len(jobs)} curated Indian tech positions")`,
-  }
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(codeSnippets[activeTab])
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-neutral-900 selection:bg-[#00F090] selection:text-black">
@@ -350,101 +320,8 @@ print(f"Loaded {len(jobs)} curated Indian tech positions")`,
           </div>
         </div>
 
-        {/* ── Interactive Terminal Deployment Card (Koyeb Style) ──── */}
-        <div className="max-w-4xl mx-auto mt-12 px-4 sm:px-6">
-          <div className="rounded-xl border border-neutral-800 bg-[#0C0D0E] shadow-2xl overflow-hidden font-tech-mono">
-            {/* Terminal Header Bar */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800 bg-[#141518]">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                <span className="ml-2 text-xs text-neutral-400 font-semibold tracking-wide">
-                  api.pathpilot.ai — deployment live
-                </span>
-              </div>
-
-              {/* Status Badge */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#00F090]/10 border border-[#00F090]/30 text-[#00F090] text-[11px] font-bold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#00F090] animate-ping" />
-                  HEALTHY (18ms)
-                </div>
-                {/* Language / Tab switchers */}
-                <div className="hidden sm:flex items-center gap-1 bg-black/40 rounded p-0.5 border border-neutral-800 text-[11px]">
-                  <button
-                    onClick={() => setActiveTab('curl')}
-                    className={`px-2 py-0.5 rounded transition-colors ${
-                      activeTab === 'curl'
-                        ? 'bg-neutral-800 text-white'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    cURL
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('ts')}
-                    className={`px-2 py-0.5 rounded transition-colors ${
-                      activeTab === 'ts'
-                        ? 'bg-neutral-800 text-white'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    TypeScript
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('python')}
-                    className={`px-2 py-0.5 rounded transition-colors ${
-                      activeTab === 'python'
-                        ? 'bg-neutral-800 text-white'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    Python
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Code Body */}
-            <div className="p-4 sm:p-5 relative text-xs sm:text-sm text-neutral-300 leading-relaxed overflow-x-auto">
-              <pre className="font-tech-mono">
-                <code>{codeSnippets[activeTab]}</code>
-              </pre>
-              <button
-                onClick={handleCopy}
-                className="absolute top-4 right-4 p-2 rounded-md bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition-colors flex items-center gap-1 text-[11px]"
-                title="Copy snippet"
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-[#00F090]" />
-                    <span className="text-[#00F090]">COPIED</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>COPY</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Terminal Live Output Footer */}
-            <div className="px-4 py-2.5 bg-black/60 border-t border-neutral-800 text-[11px] text-neutral-400 flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-[#00F090]">✔</span>
-                <span>Response: 200 OK — 143 verified Indian job roles ready to query</span>
-              </div>
-              <Link
-                href="/jobs"
-                className="text-[#00F090] hover:underline flex items-center gap-1"
-              >
-                Open interactive board <ArrowUpRight className="w-3 h-3" />
-              </Link>
-            </div>
-          </div>
-        </div>
+        {/* ── Student Career Journey (Animated Cartoon Character Story) ──── */}
+        <StudentCareerJourneyAnimation />
       </section>
 
       {/* ── "Trusted by Ambitious Teams" Logo Bar ──────────────────── */}
@@ -551,7 +428,10 @@ print(f"Loaded {len(jobs)} curated Indian tech positions")`,
               <span className="font-tech-mono text-xs text-[#00F090] tracking-wider uppercase mb-4 inline-block">
                 // WHAT OUR COMMUNITY SAYS
               </span>
-              <h2 className="font-display text-3xl sm:text-5xl md:text-6xl text-white tracking-tight leading-[0.95] uppercase mb-8">
+              <h2
+                className="font-display text-3xl sm:text-5xl md:text-6xl text-white tracking-tight leading-[0.95] uppercase mb-8"
+                style={{ color: '#FFFFFF' }}
+              >
                 &ldquo;PATHPILOT GAVE OUR GRADUATES THE EXACT ROADMAP AND VERIFIED MENTORS NEEDED TO LAND TOP TIER ROLES.&rdquo;
               </h2>
               <div className="flex items-center gap-4">
@@ -559,11 +439,11 @@ print(f"Loaded {len(jobs)} curated Indian tech positions")`,
                   RS
                 </div>
                 <div>
-                  <h4 className="font-tech-mono text-sm font-bold text-white uppercase">
+                  <h4 className="font-tech-mono text-sm font-bold uppercase" style={{ color: '#FFFFFF' }}>
                     Rahul Sharma
                   </h4>
                   <p className="font-tech-mono text-xs text-neutral-400">
-                    Staff Engineer @ FinTech Unicorn & PathPilot Mentor
+                    Staff Engineer @ FinTech Unicorn &amp; PathPilot Mentor
                   </p>
                 </div>
               </div>
@@ -754,7 +634,10 @@ print(f"Loaded {len(jobs)} curated Indian tech positions")`,
           <span className="font-tech-mono text-xs text-[#00F090] uppercase tracking-wider mb-4 inline-block">
             // READY TO LAUNCH
           </span>
-          <h2 className="font-display text-4xl sm:text-6xl md:text-7xl text-white tracking-tight uppercase leading-[0.9] mb-6">
+          <h2
+            className="font-display text-4xl sm:text-6xl md:text-7xl text-white tracking-tight uppercase leading-[0.9] mb-6"
+            style={{ color: '#FFFFFF' }}
+          >
             START YOUR CAREER ENGINE TODAY.
           </h2>
           <p className="text-neutral-400 max-w-xl mx-auto text-sm sm:text-base mb-8">
