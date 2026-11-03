@@ -59,7 +59,7 @@ export function AppShell({
       const storedProfile = localStorage.getItem('pathpilot_student_profile')
       if (storedProfile) {
         const parsed = JSON.parse(storedProfile)
-        const role = parsed.targetRole || parsed.profile?.targetRole
+        const role = parsed.targetRole || parsed.profile?.targetRole || parsed.target_job_role
         if (role) {
           setProfile((prev) => ({ ...prev, targetRole: role }))
         }

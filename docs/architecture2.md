@@ -1,4 +1,4 @@
-# 🚀 Job Board & Intelligence Engine (Architecture Spec 2.0)
+![alt text](image.png)# 🚀 Job Board & Intelligence Engine (Architecture Spec 2.0)
 
 > **Document Name**: `architecture2.md`  
 > **Target Project**: PathPilot / FindYourWay  

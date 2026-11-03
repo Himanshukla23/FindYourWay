@@ -5,6 +5,7 @@
  */
 
 import { DEMO_MENTORS } from './demo-data'
+import { FALLBACK_PM_JOBS } from './jobs-fallback'
 
 export interface Mentor {
   id: string
@@ -657,6 +658,8 @@ export async function getOnboardingProfile(): Promise<any | null> {
   return null
 }
 
+
+
 /**
  * Save onboarding in-progress draft to survive page refreshes
  */
@@ -681,6 +684,8 @@ export function getOnboardingDraft(): { step: number; draft: any } | null {
   } catch {}
   return null
 }
+
+
 
 // ── Local Storage Helpers for Resilient Offline Cache ────────
 function persistLocalBooking(booking: BookingResponse) {
@@ -716,3 +721,238 @@ function updateLocalBookingStatus(bookingId: string, status: 'confirmed' | 'canc
     // ignore
   }
 }
+
+// ─── Architecture 2.0: Job Board & Match Engine Client Methods ───────────────
+
+import type { JobListing, JobListResponse, JobMatchAnalysis, UserAppliedJob, JobTailorRequest, JobTailorResponse } from '@/types'
+
+export interface JobQueryParams {
+  search?: string
+  country?: string
+  work_mode?: string
+  role_category?: string
+  exp_range?: string
+  sort_by?: string
+  limit?: number
+  offset?: number
+  user_email?: string
+}
+
+export async function fetchJobs(params: JobQueryParams = {}): Promise<JobListResponse> {
+  const query = new URLSearchParams()
+  if (params.search) query.set('search', params.search)
+  if (params.country && params.country !== 'All') query.set('country', params.country)
+  if (params.work_mode && params.work_mode !== 'All') query.set('work_mode', params.work_mode)
+  if (params.role_category && params.role_category !== 'All') query.set('role_category', params.role_category)
+  if (params.exp_range && params.exp_range !== 'All') query.set('exp_range', params.exp_range)
+  if (params.sort_by) query.set('sort_by', params.sort_by)
+  if (params.limit) query.set('limit', String(params.limit))
+  if (params.offset) query.set('offset', String(params.offset))
+  if (params.user_email) query.set('user_email', params.user_email)
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/jobs?${query.toString()}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store'
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (data && Array.isArray(data.jobs) && data.jobs.length > 0) {
+        return data
+      }
+    }
+  } catch (err) {
+    console.warn('[api-client] Backend fetchJobs failed, falling back to client cache:', err)
+  }
+
+  // Graceful client fallback with verified real PM-Launchpad dataset
+  let filtered = FALLBACK_PM_JOBS.filter(j => j.status !== 'closed')
+  if (params.country && params.country !== 'All') {
+    if (params.country === 'India') {
+      filtered = filtered.filter(j => j.country.toLowerCase() === 'india')
+    } else if (params.country === 'Global') {
+      filtered = filtered.filter(j => j.country.toLowerCase() !== 'india' || j.work_mode.toLowerCase() === 'remote')
+    }
+  }
+  if (params.role_category && params.role_category !== 'All') {
+    filtered = filtered.filter(j => j.role_category.toLowerCase().includes(params.role_category!.toLowerCase()))
+  }
+  if (params.exp_range && params.exp_range !== 'All') {
+    if (params.exp_range === '0-1' || params.exp_range === 'fresher') {
+      // Pure Fresher: strictly requires 0 years minimum experience (accepts fresh grads / college seniors)
+      filtered = filtered.filter(j => j.exp_min === 0 && j.exp_max <= 2)
+    } else if (params.exp_range === '1-3' || params.exp_range === 'early') {
+      filtered = filtered.filter(j => (j.exp_min >= 1 && j.exp_min <= 3) || (j.exp_min === 0 && j.exp_max >= 3))
+    } else if (params.exp_range === '3+' || params.exp_range === 'senior') {
+      filtered = filtered.filter(j => j.exp_max >= 3 || j.exp_min >= 3)
+    }
+  }
+  if (params.search) {
+    const s = params.search.toLowerCase()
+    filtered = filtered.filter(j => 
+      j.title.toLowerCase().includes(s) || 
+      j.company.toLowerCase().includes(s) || 
+      (j.skills && j.skills.some(sk => sk.toLowerCase().includes(s)))
+    )
+  }
+
+  const limit = params.limit || 30
+  const offset = params.offset || 0
+
+  return {
+    total: filtered.length,
+    limit,
+    offset,
+    has_more: offset + limit < filtered.length,
+    jobs: filtered.slice(offset, offset + limit),
+    last_verified: new Date().toISOString()
+  }
+}
+
+export async function fetchJobById(jobId: string, userEmail?: string): Promise<JobListing | null> {
+  try {
+    const url = userEmail 
+      ? `${BACKEND_URL}/api/jobs/${jobId}?user_email=${encodeURIComponent(userEmail)}`
+      : `${BACKEND_URL}/api/jobs/${jobId}`
+    const res = await fetch(url)
+    if (res.ok) return await res.json()
+  } catch (err) {
+    console.warn(`[api-client] Failed to fetch job ${jobId}:`, err)
+  }
+  return FALLBACK_PM_JOBS.find(j => j.id === jobId || j.hash_id === jobId) || null
+}
+
+export async function syncJobsEngine(): Promise<boolean> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/jobs/sync`, { method: 'POST' })
+    return res.ok
+  } catch (err) {
+    console.warn('[api-client] syncJobsEngine error:', err)
+    return false
+  }
+}
+
+
+
+export async function toggleSaveJob(jobId: string, userEmail: string, save: boolean): Promise<boolean> {
+  try {
+    const method = save ? 'POST' : 'DELETE'
+    const url = save 
+      ? `${BACKEND_URL}/api/jobs/${jobId}/save`
+      : `${BACKEND_URL}/api/jobs/${jobId}/save?user_email=${encodeURIComponent(userEmail)}`
+    const body = save ? JSON.stringify({ job_id: jobId, user_email: userEmail }) : undefined
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body
+    })
+    if (res.ok) {
+      const data = await res.json()
+      return data.saved ?? save
+    }
+  } catch (err) {
+    console.warn('[api-client] toggleSaveJob network error:', err)
+  }
+  return save
+}
+
+export async function fetchUserSavedJobs(userEmail: string): Promise<JobListing[]> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/jobs/user/saved?user_email=${encodeURIComponent(userEmail)}`)
+    if (res.ok) {
+      const data = await res.json()
+      return data.saved_jobs || []
+    }
+  } catch (err) {
+    console.warn('[api-client] fetchUserSavedJobs error:', err)
+  }
+  return []
+}
+
+export async function trackJobApplication(
+  jobId: string, 
+  userEmail: string, 
+  status: string = 'applied', 
+  notes: string = ''
+): Promise<any> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/jobs/${jobId}/apply`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        job_id: jobId,
+        user_email: userEmail,
+        status,
+        notes
+      })
+    })
+    if (res.ok) {
+      const data = await res.json()
+      return data.record
+    }
+  } catch (err) {
+    console.warn('[api-client] trackJobApplication error:', err)
+  }
+  return null
+}
+
+
+
+export async function fetchUserAppliedJobs(userEmail: string): Promise<any[]> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/jobs/user/applied?user_email=${encodeURIComponent(userEmail)}`)
+    if (res.ok) {
+      const data = await res.json()
+      return data.applications || []
+    }
+  } catch (err) {
+    console.warn('[api-client] fetchUserAppliedJobs error:', err)
+  }
+  return []
+}
+
+export async function matchResumeWithJob(
+  jobId: string,
+  resumeText?: string,
+  studentSkills?: string[]
+): Promise<JobMatchAnalysis | null> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/jobs/match`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        job_id: jobId,
+        resume_text: resumeText,
+        student_skills: studentSkills
+      })
+    })
+    if (res.ok) {
+      return await res.json()
+    }
+  } catch (err) {
+    console.warn('[api-client] matchResumeWithJob error:', err)
+  }
+  return null
+}
+
+export async function tailorResumeForJob(request: JobTailorRequest): Promise<JobTailorResponse | null> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/jobs/tailor`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request)
+    })
+    if (res.ok) {
+      return await res.json()
+    }
+  } catch (err) {
+    console.warn('[api-client] tailorResumeForJob error:', err)
+  }
+  return null
+}
+
+
+
+

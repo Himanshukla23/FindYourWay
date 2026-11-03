@@ -9,6 +9,7 @@ import {
   Map,
   Users,
   Calendar,
+  Briefcase,
   User,
   Zap,
   X,
@@ -19,8 +20,10 @@ import { cn, getInitials } from '@/lib/utils'
 
 const navItems = [
   { href: '/dashboard',     label: 'Dashboard',       icon: LayoutDashboard },
+  { href: '/jobs',          label: 'Job Board',       icon: Briefcase },
   { href: '/resume',        label: 'Resume Analysis', icon: FileText },
   { href: '/careers',       label: 'Explore Careers', icon: Compass },
+  { href: '/roadmap',       label: 'Career Roadmap',  icon: Map },
   { href: '/mentors',       label: 'Find Mentors',    icon: Users },
   { href: '/consultations', label: 'My Sessions',     icon: Calendar },
   { href: '/profile',       label: 'My Profile',      icon: User },

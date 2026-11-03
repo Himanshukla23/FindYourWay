@@ -22,7 +22,8 @@ import {
   AlertCircle,
   Zap,
   Bookmark,
-  Share2
+  Share2,
+  Briefcase
 } from 'lucide-react'
 import { updateTaskProgress } from '@/lib/api-client'
 
@@ -629,6 +630,33 @@ export default function RoadmapPage() {
         </div>
       )}
 
+      {/* Ready to Apply: Connect Roadmap Skills to Active Job Openings */}
+      <div className="bg-gradient-to-r from-emerald-50 via-teal-50/50 to-white border border-emerald-200 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>Live Direct ATS Openings</span>
+          </div>
+          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-emerald-600" />
+            Ready to Apply for {currentRoleTitle} Roles?
+          </h3>
+          <p className="text-xs text-slate-600 max-w-xl">
+            Companies like Swiggy, CRED, PhonePe, Razorpay, and Google are currently hiring for entry-level roles requiring these exact skills.
+          </p>
+        </div>
+        <Link
+          href={`/jobs?search=${encodeURIComponent(currentRoleTitle)}`}
+          className="shrink-0 inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition-all shadow-xs cursor-pointer"
+        >
+          <span>Browse Matching Jobs</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
       {/* Suggested Mentor Consultation Banner */}
       <div className="bg-blue-50/80 border border-blue-200 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
         <div>
@@ -641,7 +669,7 @@ export default function RoadmapPage() {
           </p>
         </div>
         <Link
-          href="/mentors"
+          href={`/mentors?search=${encodeURIComponent(currentRoleTitle)}`}
           className="shrink-0 px-6 py-2.5 rounded-full bg-blue-600 text-white font-medium text-xs hover:bg-blue-700 transition-all shadow-xs"
         >
           Find a {currentRoleTitle} Mentor →

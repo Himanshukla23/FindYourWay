@@ -18,9 +18,13 @@ import {
   BookOpen,
   User,
   GraduationCap,
-  Award
+  Award,
+  Briefcase,
+  MapPin,
+  ExternalLink
 } from 'lucide-react'
-import { BookingResponse } from '@/lib/api-client'
+import { BookingResponse, fetchJobs } from '@/lib/api-client'
+import { JobListing } from '@/types'
 
 const INTEREST_LABELS: Record<string, string> = {
   software_dev: 'Software Development',
@@ -65,6 +69,7 @@ export default function DashboardPage() {
   const [careerInterests, setCareerInterests] = useState<string[]>([])
   const [hoursPerWeek, setHoursPerWeek] = useState(8)
   const [skills, setSkills] = useState<Array<{ name: string; level: string }>>([])
+  const [featuredJobs, setFeaturedJobs] = useState<JobListing[]>([])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -139,6 +144,15 @@ export default function DashboardPage() {
         }
       } catch {}
     }
+
+    // Load top verified job opportunities matching profile
+    fetchJobs({ limit: 3 })
+      .then((res) => {
+        if (res && res.jobs) {
+          setFeaturedJobs(res.jobs.slice(0, 3))
+        }
+      })
+      .catch(() => {})
   }, [])
 
   // Career Readiness Score Calculation
@@ -311,6 +325,103 @@ export default function DashboardPage() {
               >
                 {INTEREST_LABELS[interest] || interest}
               </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Featured Verified Openings for Target Role */}
+      {featuredJobs.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-blue-600" />
+                <h3 className="text-sm font-bold text-slate-900">
+                  Verified Early-Career &amp; APM Openings
+                </h3>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                  </span>
+                  Live Direct ATS
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Active opportunities verified from official company boards.
+              </p>
+            </div>
+
+            <Link
+              href="/jobs"
+              className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 self-start sm:self-center"
+            >
+              <span>Explore All Opportunities</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {featuredJobs.map((job) => (
+              <div
+                key={job.id}
+                className="group relative flex flex-col justify-between p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-blue-400/60 hover:shadow-md transition-all"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-bold text-xs text-slate-800 overflow-hidden shrink-0">
+                        {job.company_logo ? (
+                          <img
+                            src={job.company_logo}
+                            alt={job.company}
+                            className="w-full h-full object-contain p-1"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none'
+                            }}
+                          />
+                        ) : (
+                          job.company.slice(0, 2).toUpperCase()
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-xs font-semibold text-slate-600 block">{job.company}</span>
+                        <h4 className="text-xs font-bold text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                          {job.title}
+                        </h4>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-500">
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-slate-400" />
+                      <span className="truncate max-w-[100px]">{job.location.split(',')[0]}</span>
+                    </span>
+                    <span>•</span>
+                    <span className="font-semibold text-emerald-600">{job.salary_display || job.work_mode}</span>
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between">
+                  <Link
+                    href={`/jobs`}
+                    className="text-[11px] font-semibold text-slate-600 hover:text-slate-900"
+                  >
+                    View Details
+                  </Link>
+                  <a
+                    href={job.apply_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold hover:bg-blue-700 transition-colors"
+                  >
+                    <span>Apply</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
             ))}
           </div>
         </div>

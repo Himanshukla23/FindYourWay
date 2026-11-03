@@ -71,21 +71,18 @@ export async function middleware(request: NextRequest) {
   // ── Route Categorization ──────────────────────────────────────────────────
   const isMentorRoute = pathname.startsWith('/mentor') && !pathname.startsWith('/mentor/sign-in') && !pathname.startsWith('/mentor/sign-up')
   
-  const studentPaths = [
-    '/student',
+  // Private student routes that strictly require authentication & are isolated from mentor accounts
+  const studentPrivatePaths = [
     '/dashboard',
+    '/student/dashboard',
     '/onboarding',
-    '/resume',
-    '/careers',
-    '/roadmap',
-    '/mentors',
     '/book',
     '/consultations',
+    '/student/bookings',
     '/profile',
+    '/student/profile',
   ]
-  const isStudentRoute = studentPaths.some((p) => pathname === p || pathname.startsWith(p + '/')) &&
-    !pathname.startsWith('/student/sign-in') &&
-    !pathname.startsWith('/student/sign-up')
+  const isPrivateStudentRoute = studentPrivatePaths.some((p) => pathname === p || pathname.startsWith(p + '/'))
 
   const authPaths = [
     '/sign-in',
@@ -105,7 +102,7 @@ export async function middleware(request: NextRequest) {
       redirectUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(redirectUrl)
     }
-    if (isStudentRoute) {
+    if (isPrivateStudentRoute) {
       const redirectUrl = new URL('/student/sign-in', request.url)
       redirectUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(redirectUrl)
@@ -121,8 +118,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl)
     }
 
-    // B: Prevent Mentor accounts from accessing Student portal
-    if (role === 'mentor' && isStudentRoute) {
+    // B: Prevent Mentor accounts from accessing private Student account portals
+    // (Note: /jobs, /careers, /mentors, /resume, /roadmap are public and accessible to both roles)
+    if (role === 'mentor' && isPrivateStudentRoute) {
       const redirectUrl = new URL('/mentor/dashboard', request.url)
       redirectUrl.searchParams.set('notice', 'student_access_denied')
       return NextResponse.redirect(redirectUrl)
@@ -146,8 +144,8 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // E: If student is not onboarded and tries to access student features (except onboarding itself)
-    if (role === 'student' && !isOnboarded && isStudentRoute && pathname !== '/onboarding') {
+    // E: If student is not onboarded and tries to access private student dashboard
+    if (role === 'student' && !isOnboarded && isPrivateStudentRoute && pathname !== '/onboarding') {
       return NextResponse.redirect(new URL('/onboarding', request.url))
     }
 

@@ -19,6 +19,8 @@ import {
   Clock,
   Laptop,
   Check,
+  Zap,
+  ExternalLink,
 } from 'lucide-react'
 
 // ── How Students Benefit ─────────────────────────────────────────────────────
@@ -31,6 +33,8 @@ const studentBenefits = [
     color: 'text-blue-600',
     bg: 'bg-blue-50',
     border: 'border-blue-100',
+    href: '/resume',
+    ctaText: 'Start Resume Audit',
   },
   {
     icon: Compass,
@@ -40,6 +44,8 @@ const studentBenefits = [
     color: 'text-violet-600',
     bg: 'bg-violet-50',
     border: 'border-violet-100',
+    href: '/careers',
+    ctaText: 'Explore Career Tracks',
   },
   {
     icon: Users,
@@ -49,6 +55,8 @@ const studentBenefits = [
     color: 'text-emerald-600',
     bg: 'bg-emerald-50',
     border: 'border-emerald-100',
+    href: '/mentors',
+    ctaText: 'Browse Mentors',
   },
 ]
 
@@ -93,6 +101,7 @@ const careerCategories = [
     desc: 'Frontend, backend, full stack, mobile app, and systems engineering.',
     color: 'text-blue-600',
     bg: 'bg-blue-50',
+    href: '/careers',
   },
   {
     id: 'cybersecurity',
@@ -102,6 +111,7 @@ const careerCategories = [
     desc: 'SOC analysis, penetration testing, threat intelligence, and security operations.',
     color: 'text-red-600',
     bg: 'bg-red-50',
+    href: '/careers',
   },
   {
     id: 'data-analytics',
@@ -111,6 +121,7 @@ const careerCategories = [
     desc: 'Data analysis, business intelligence, SQL engineering, and machine learning.',
     color: 'text-emerald-600',
     bg: 'bg-emerald-50',
+    href: '/careers',
   },
   {
     id: 'product-mgmt',
@@ -120,6 +131,7 @@ const careerCategories = [
     desc: 'Associate PM, technical product management, product ops, and feature discovery.',
     color: 'text-amber-600',
     bg: 'bg-amber-50',
+    href: '/jobs', // Direct to the 144-job verified PM board
   },
   {
     id: 'cloud-devops',
@@ -129,6 +141,7 @@ const careerCategories = [
     desc: 'Infrastructure as code, CI/CD pipelines, container orchestration, and reliability.',
     color: 'text-sky-600',
     bg: 'bg-sky-50',
+    href: '/careers',
   },
   {
     id: 'uiux-design',
@@ -138,6 +151,7 @@ const careerCategories = [
     desc: 'Product design, user research, wireframing, design systems, and usability testing.',
     color: 'text-pink-600',
     bg: 'bg-pink-50',
+    href: '/careers',
   },
 ]
 
@@ -162,6 +176,28 @@ export default function HomePage() {
             </div>
           </Link>
 
+          {/* Core Feature Navigation */}
+          <nav className="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-600">
+            <Link href="/careers" className="hover:text-blue-600 transition-colors">
+              Careers
+            </Link>
+            <Link href="/jobs" className="flex items-center gap-1.5 hover:text-blue-600 transition-colors">
+              <span>Job Board</span>
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 animate-pulse">
+                140+ Live
+              </span>
+            </Link>
+            <Link href="/mentors" className="hover:text-blue-600 transition-colors">
+              Mentors
+            </Link>
+            <Link href="/resume" className="hover:text-blue-600 transition-colors">
+              Resume Audit
+            </Link>
+            <Link href="/roadmap" className="hover:text-blue-600 transition-colors">
+              Roadmap
+            </Link>
+          </nav>
+
           {/* Distinguishable Student & Mentor Entry Points */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Student Login Link */}
@@ -169,27 +205,19 @@ export default function HomePage() {
               href="/student/sign-in"
               className="text-xs sm:text-sm font-semibold text-slate-600 hover:text-blue-600 px-2.5 sm:px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
             >
-              Student Login
+              Sign In
             </Link>
 
             {/* Mentor Login Link */}
             <Link
               href="/mentor/sign-in"
-              className="text-xs sm:text-sm font-semibold text-slate-600 hover:text-indigo-600 px-2.5 sm:px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors hidden md:inline-flex items-center gap-1"
+              className="text-xs sm:text-sm font-semibold text-slate-600 hover:text-indigo-600 px-2.5 sm:px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors hidden sm:inline-flex items-center gap-1"
             >
               <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-              <span>Mentor Login</span>
+              <span>Mentor Portal</span>
             </Link>
 
-            {/* Become a Mentor (Secondary Registration CTA) */}
-            <Link
-              href="/mentor/sign-up"
-              className="hidden lg:inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 px-3.5 py-1.5 rounded-xl transition-all"
-            >
-              <span>Become a Mentor</span>
-            </Link>
-
-            {/* Get Started (Primary Student Registration CTA) */}
+            {/* Get Started CTA */}
             <Link
               href="/student/sign-up"
               className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3.5 sm:px-4 py-2 rounded-xl shadow-xs transition-all hover:shadow-md"
@@ -221,19 +249,28 @@ export default function HomePage() {
 
               {/* Supporting Text */}
               <p className="text-base sm:text-lg text-slate-600 max-w-2xl leading-relaxed">
-                PathPilot AI pairs university students with personalized career roadmaps and 1-on-1 consultations with verified professionals from top technology companies.
+                PathPilot AI pairs university students with personalized career roadmaps, 140+ verified early-career jobs with 1-click ATS resume tailoring, and 1-on-1 consultations with verified tech leaders.
               </p>
 
               {/* Dual Entry Action Cards / Buttons */}
               <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-                {/* Student CTA */}
+                {/* Primary: Job Board */}
                 <Link
-                  href="/student/sign-up"
+                  href="/jobs"
                   className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all"
                 >
-                  <GraduationCap className="w-4 h-4" />
-                  <span>Get Started as Student</span>
+                  <Briefcase className="w-4 h-4" />
+                  <span>Browse 140+ Verified Jobs</span>
                   <ArrowRight className="w-4 h-4" />
+                </Link>
+
+                {/* Explore Careers CTA */}
+                <Link
+                  href="/careers"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 font-semibold text-sm shadow-2xs transition-all"
+                >
+                  <Compass className="w-4 h-4 text-blue-600" />
+                  <span>Explore Careers</span>
                 </Link>
 
                 {/* Mentor CTA */}
@@ -241,7 +278,7 @@ export default function HomePage() {
                   href="/mentor/sign-up"
                   className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 font-semibold text-sm shadow-2xs transition-all"
                 >
-                  <Briefcase className="w-4 h-4 text-indigo-600" />
+                  <GraduationCap className="w-4 h-4 text-indigo-600" />
                   <span>Become a Mentor</span>
                 </Link>
               </div>
@@ -342,11 +379,11 @@ export default function HomePage() {
 
                   <div className="pt-6 border-t border-slate-100 mt-6">
                     <Link
-                      href="/student/sign-up"
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                      href={item.href}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 group-hover:underline"
                     >
-                      <span>Explore Student Portal</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <span>{item.ctaText}</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </Link>
                   </div>
                 </div>
@@ -356,7 +393,69 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Section 2: Why Industry Professionals Should Become Mentors */}
+      {/* ── Section 2: Verified Job Board Highlight (PM Launchpad Sync) ──── */}
+      <section className="py-16 sm:py-20 bg-gradient-to-b from-blue-50/50 via-white to-white border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 sm:p-12 text-white shadow-xl relative overflow-hidden">
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-8 space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-3.5 py-1 text-xs font-semibold text-blue-100 border border-white/20">
+                  <Briefcase className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Architecture 2.0 • 140+ Verified Openings</span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
+                  Verified Early-Career &amp; APM Job Intelligence
+                </h3>
+                <p className="text-sm sm:text-base text-blue-100 leading-relaxed max-w-2xl">
+                  Direct ATS application links to openings at <strong>JUSPAY, Swiggy, MakeMyTrip, CRED, Altinvest, Certa</strong>, and top tech companies. Includes automated link health checks, AI resume fit scores, STAR bullet tailor, and personalized LinkedIn recruiter outreach notes.
+                </p>
+                <div className="pt-2 flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/jobs"
+                    className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-bold text-blue-700 shadow-md transition-all hover:bg-blue-50 active:scale-95"
+                  >
+                    <span>Browse 140+ Live Openings</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <Link
+                    href="/resume"
+                    className="inline-flex items-center gap-2 rounded-xl bg-blue-500/20 border border-white/20 px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-500/30"
+                  >
+                    <span>Check My Resume Fit</span>
+                  </Link>
+                </div>
+              </div>
+
+              <div className="lg:col-span-4 bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/15 space-y-3">
+                <div className="flex items-center justify-between text-xs font-semibold text-blue-200 border-b border-white/15 pb-2">
+                  <span>Openings Breakdown</span>
+                  <span className="text-emerald-300">Live Synced</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-blue-100">🇮🇳 India Tech &amp; APM</span>
+                    <span className="font-bold text-white bg-white/20 px-2 py-0.5 rounded">70+ Roles</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-blue-100">🌍 Global / Remote Roles</span>
+                    <span className="font-bold text-white bg-white/20 px-2 py-0.5 rounded">16+ Roles</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-blue-100">⚡ 1-Click Tailored Bullets</span>
+                    <span className="font-bold text-emerald-300">Instant</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-blue-100">🔗 Link Health Verification</span>
+                    <span className="font-bold text-emerald-300">Automated Bot</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Section 3: Why Industry Professionals Should Become Mentors */}
       <section className="py-16 sm:py-20 bg-slate-50/70 border-b border-slate-200/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
@@ -401,10 +500,10 @@ export default function HomePage() {
                   <div className="pt-6 border-t border-slate-100 mt-6">
                     <Link
                       href="/mentor/sign-up"
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 group-hover:underline"
                     >
                       <span>Apply as a Mentor</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </Link>
                   </div>
                 </div>
@@ -457,11 +556,11 @@ export default function HomePage() {
             </div>
 
             <Link
-              href="/student/sign-up"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 self-start sm:self-auto"
+              href="/careers"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 self-start sm:self-auto group"
             >
               <span>View all categories</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
 
@@ -471,7 +570,7 @@ export default function HomePage() {
               return (
                 <Link
                   key={cat.id}
-                  href="/student/sign-up"
+                  href={cat.href}
                   className="rounded-2xl border border-slate-200 p-5 bg-white hover:border-blue-400 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all flex flex-col justify-between group text-left"
                 >
                   <div className="space-y-3">
@@ -495,7 +594,7 @@ export default function HomePage() {
                   </div>
 
                   <div className="pt-3 border-t border-slate-100 mt-4 flex items-center justify-between text-[11px] font-semibold text-slate-600 group-hover:text-blue-600 transition-colors">
-                    <span>Explore Roles</span>
+                    <span>Inspect Track &amp; Roles</span>
                     <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </Link>
@@ -532,24 +631,115 @@ export default function HomePage() {
       </section>
 
       {/* ── Footer ─────────────────────────────────────────────────── */}
-      <footer className="bg-slate-900 text-slate-400 py-10 border-t border-slate-800 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white">
-              <Sparkles className="w-3.5 h-3.5" />
+      <footer className="bg-slate-900 text-slate-400 py-12 border-t border-slate-800 text-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-slate-800">
+            {/* Brand column */}
+            <div className="space-y-3 md:col-span-1">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <span className="font-bold text-base text-white">PathPilot AI</span>
+              </div>
+              <p className="text-slate-400 leading-relaxed">
+                The two-sided AI career intelligence and mentorship marketplace for university talent and verified tech leaders.
+              </p>
             </div>
-            <span className="font-bold text-slate-200">PathPilot AI</span>
-            <span className="text-slate-500">— Two-Sided Career &amp; Mentorship Marketplace</span>
+
+            {/* Explore column */}
+            <div className="space-y-2.5">
+              <span className="font-bold text-white text-sm">Platform</span>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/jobs" className="hover:text-white transition-colors flex items-center gap-1.5">
+                    <span>Job Board</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400">140+</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/careers" className="hover:text-white transition-colors">
+                    Career Tracks
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/mentors" className="hover:text-white transition-colors">
+                    Verified Mentors
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/resume" className="hover:text-white transition-colors">
+                    AI Resume Audit
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/roadmap" className="hover:text-white transition-colors">
+                    Learning Roadmaps
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Student Portal */}
+            <div className="space-y-2.5">
+              <span className="font-bold text-white text-sm">Student Access</span>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/student/sign-in" className="hover:text-white transition-colors">
+                    Student Sign In
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/student/sign-up" className="hover:text-white transition-colors">
+                    Register Student Account
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/dashboard" className="hover:text-white transition-colors">
+                    Student Dashboard
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Mentor Portal */}
+            <div className="space-y-2.5">
+              <span className="font-bold text-white text-sm">Mentor Access</span>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/mentor/sign-in" className="hover:text-white transition-colors">
+                    Mentor Login
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/mentor/sign-up" className="hover:text-white transition-colors">
+                    Become a Verified Mentor
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/mentor/dashboard" className="hover:text-white transition-colors">
+                    Mentor Dashboard
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4 text-slate-400">
-            <Link href="/student/sign-in" className="hover:text-white transition-colors">
-              Student Portal
-            </Link>
-            <Link href="/mentor/sign-in" className="hover:text-white transition-colors">
-              Mentor Portal
-            </Link>
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500">
             <span>&copy; 2026 PathPilot AI. All rights reserved.</span>
+            <div className="flex items-center gap-4">
+              <Link href="/jobs" className="hover:text-slate-400 transition-colors">
+                Jobs
+              </Link>
+              <span>•</span>
+              <Link href="/careers" className="hover:text-slate-400 transition-colors">
+                Careers
+              </Link>
+              <span>•</span>
+              <Link href="/mentors" className="hover:text-slate-400 transition-colors">
+                Mentors
+              </Link>
+            </div>
           </div>
         </div>
       </footer>

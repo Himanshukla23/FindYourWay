@@ -26,10 +26,9 @@ class AIProviderService:
         2. Google Gemini (REST with strict timeout)
         3. Deterministic Mock Fallback (zero UI crash guarantee)
         """
-        # 1. Try Google Gemini First (Ultra-fast active endpoints, < 1s response)
+        # 1. Try Google Gemini First
         if settings.GOOGLE_GEMINI_API_KEY:
-            gemini_models = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest"]
-            for model_name in gemini_models:
+            for model_name in ["gemini-flash-lite-latest"]:
                 try:
                     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={settings.GOOGLE_GEMINI_API_KEY}"
                     payload = {
@@ -38,7 +37,7 @@ class AIProviderService:
                     if response_json:
                         payload["generationConfig"] = {"responseMimeType": "application/json"}
 
-                    async with httpx.AsyncClient(timeout=4.0) as client:
+                    async with httpx.AsyncClient(timeout=1.5) as client:
                         resp = await client.post(url, json=payload)
                         if resp.status_code == 200:
                             data = resp.json()
@@ -52,25 +51,23 @@ class AIProviderService:
                                         "model": model_name
                                     }
                 except Exception:
-                    pass
+                    break
 
         # 2. Try Groq (Fast failover)
         if settings.GROQ_API_KEY:
-            groq_models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
-            for model_name in groq_models:
+            for model_name in ["llama-3.3-70b-versatile"]:
                 try:
                     import groq
-                    client = groq.Groq(api_key=settings.GROQ_API_KEY)
+                    client = groq.AsyncGroq(api_key=settings.GROQ_API_KEY, timeout=1.5, max_retries=0)
                     messages = [
                         {"role": "system", "content": system_instruction},
                         {"role": "user", "content": prompt}
                     ]
                     
-                    completion = client.chat.completions.create(
+                    completion = await client.chat.completions.create(
                         model=model_name,
                         messages=messages,
-                        response_format={"type": "json_object"} if response_json else None,
-                        timeout=3.0
+                        response_format={"type": "json_object"} if response_json else None
                     )
                     raw_text = completion.choices[0].message.content
                     if raw_text and raw_text.strip():
@@ -79,8 +76,7 @@ class AIProviderService:
                             "provider_used": "groq",
                             "model": model_name
                         }
-                except Exception as e:
-                    print(f"[AIProvider] Groq model {model_name} warning: {e}")
+                except Exception:
                     break
 
         # 3. Deterministic Mock Fallback

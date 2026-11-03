@@ -14,6 +14,9 @@ import {
   ChevronRight,
   ShieldCheck,
   Sparkles,
+  Compass,
+  ArrowRightLeft,
+  Globe,
 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
 
@@ -62,6 +65,14 @@ export function MentorSidebar({
       }
       window.location.href = '/'
     }
+  }
+
+  function handleSwitchToStudent() {
+    document.cookie = 'pathpilot_user_role=student; path=/; max-age=2592000'
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pathpilot_user_role', 'student')
+    }
+    window.location.href = '/dashboard'
   }
 
   return (
@@ -186,7 +197,15 @@ export function MentorSidebar({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {mentorNavItems.map(({ href, label, icon: Icon }) => {
               const active = pathname === href || pathname.startsWith(href + '/')
-              return (
+              function handleSwitchToStudent() {
+    document.cookie = 'pathpilot_user_role=student; path=/; max-age=2592000'
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pathpilot_user_role', 'student')
+    }
+    window.location.href = '/dashboard'
+  }
+
+  return (
                 <Link
                   key={href}
                   href={href}
@@ -210,6 +229,77 @@ export function MentorSidebar({
                 </Link>
               )
             })}
+
+            {/* Platform Explorer Section */}
+            <div style={{ margin: '14px 12px 6px', paddingTop: 12, borderTop: '1px solid #F1F5F9' }}>
+              <div style={{ color: '#94A3B8', fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 4 }}>
+                Platform &amp; Jobs
+              </div>
+            </div>
+
+            <Link
+              href="/jobs"
+              onClick={onClose}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '9px 12px',
+                borderRadius: 10,
+                textDecoration: 'none',
+                fontSize: '0.875rem',
+                fontWeight: pathname === '/jobs' ? 700 : 500,
+                color: pathname === '/jobs' ? '#059669' : '#475569',
+                background: pathname === '/jobs' ? '#ECFDF5' : 'transparent',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Briefcase size={18} color={pathname === '/jobs' ? '#059669' : '#64748B'} />
+              <span style={{ flex: 1 }}>Job Board</span>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#059669', background: '#D1FAE5', padding: '1px 6px', borderRadius: 6 }}>140+</span>
+            </Link>
+
+            <Link
+              href="/careers"
+              onClick={onClose}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '9px 12px',
+                borderRadius: 10,
+                textDecoration: 'none',
+                fontSize: '0.875rem',
+                fontWeight: pathname === '/careers' ? 700 : 500,
+                color: pathname === '/careers' ? '#2563EB' : '#475569',
+                background: pathname === '/careers' ? '#EFF6FF' : 'transparent',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Compass size={18} color={pathname === '/careers' ? '#2563EB' : '#64748B'} />
+              <span>Career Tracks</span>
+            </Link>
+
+            <Link
+              href="/"
+              onClick={onClose}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '9px 12px',
+                borderRadius: 10,
+                textDecoration: 'none',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                color: '#475569',
+                background: 'transparent',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Globe size={18} color="#64748B" />
+              <span>Landing Page</span>
+            </Link>
           </div>
         </nav>
 
@@ -289,6 +379,31 @@ export function MentorSidebar({
               <LogOut size={16} />
             </button>
           </div>
+
+          {/* Switch to Student Portal View */}
+          <button
+            onClick={handleSwitchToStudent}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              padding: '7px 10px',
+              borderRadius: 8,
+              background: '#F8FAFC',
+              border: '1px solid #E2E8F0',
+              color: '#334155',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+            title="Switch to Student Portal view"
+          >
+            <ArrowRightLeft size={13} className="text-blue-600" />
+            <span>Switch to Student View</span>
+          </button>
         </div>
       </aside>
     </>

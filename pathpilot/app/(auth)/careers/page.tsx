@@ -105,19 +105,40 @@ export default function CareersPage() {
         </div>
 
         {activeTargetJob && (
-          <div className="self-start md:self-auto px-4 py-2.5 bg-white border border-blue-200 rounded-2xl flex items-center gap-3 shadow-xs">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="self-start md:self-auto px-4 py-2.5 bg-white border border-blue-200 rounded-2xl flex flex-wrap items-center gap-3 shadow-xs">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
             <div className="text-xs">
               <span className="text-slate-500">Active Target: </span>
               <span className="font-bold text-slate-900">{activeTargetJob.title}</span>
             </div>
-            <Link
-              href={`/mentors?search=${encodeURIComponent(activeTargetJob.title)}`}
-              className="text-xs font-bold text-blue-600 hover:text-blue-700 ml-1 inline-flex items-center gap-1"
-            >
-              <Users className="w-3 h-3" />
-              Find Mentors
-            </Link>
+            <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+              <Link
+                href={`/jobs?search=${encodeURIComponent(activeTargetJob.title)}`}
+                className="text-xs font-bold text-emerald-600 hover:text-emerald-700 inline-flex items-center gap-1"
+                title="Search verified job openings"
+              >
+                <Briefcase className="w-3 h-3" />
+                Jobs
+              </Link>
+              <span className="text-slate-300">•</span>
+              <Link
+                href={`/roadmap?role=${encodeURIComponent(activeTargetJob.title)}`}
+                className="text-xs font-bold text-purple-600 hover:text-purple-700 inline-flex items-center gap-1"
+                title="Generate custom career roadmap"
+              >
+                <Compass className="w-3 h-3" />
+                Roadmap
+              </Link>
+              <span className="text-slate-300">•</span>
+              <Link
+                href={`/mentors?search=${encodeURIComponent(activeTargetJob.title)}`}
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 inline-flex items-center gap-1"
+                title="Connect with verified mentors"
+              >
+                <Users className="w-3 h-3" />
+                Mentors
+              </Link>
+            </div>
           </div>
         )}
       </div>
@@ -442,14 +463,32 @@ export default function CareersPage() {
               </div>
             )}
 
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-              <Link
-                href={`/mentors?search=${encodeURIComponent(selectedRoleForModal.title)}`}
-                className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
-              >
-                <Users className="w-3.5 h-3.5" />
-                Find Mentors for this Role
-              </Link>
+            <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3 text-xs">
+                <Link
+                  href={`/jobs?search=${encodeURIComponent(selectedRoleForModal.title)}`}
+                  className="font-bold text-emerald-600 hover:underline flex items-center gap-1"
+                >
+                  <Briefcase className="w-3.5 h-3.5" />
+                  View Jobs
+                </Link>
+                <span className="text-slate-300">•</span>
+                <Link
+                  href={`/roadmap?role=${encodeURIComponent(selectedRoleForModal.title)}`}
+                  className="font-bold text-purple-600 hover:underline flex items-center gap-1"
+                >
+                  <Compass className="w-3.5 h-3.5" />
+                  Roadmap
+                </Link>
+                <span className="text-slate-300">•</span>
+                <Link
+                  href={`/mentors?search=${encodeURIComponent(selectedRoleForModal.title)}`}
+                  className="font-bold text-blue-600 hover:underline flex items-center gap-1"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  Mentors
+                </Link>
+              </div>
 
               <div className="flex items-center gap-2">
                 <button

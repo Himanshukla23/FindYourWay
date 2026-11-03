@@ -46,6 +46,17 @@ export default function MentorsPage() {
     setOpenSections(prev => ({ ...prev, [section]: !prev[section] }))
   }
 
+  // Read URL search params on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const q = params.get('search')
+      if (q) setSearchQuery(q)
+      const domain = params.get('domain')
+      if (domain) setSelectedDomains([domain])
+    }
+  }, [])
+
   // Fetch initial or updated mentors from server
   useEffect(() => {
     let isMounted = true
