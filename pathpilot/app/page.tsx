@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { CompanyConnectionsMarquee } from '@/components/landing/CompanyConnectionsMarquee'
 import {
   Sparkles,
   ArrowRight,
@@ -334,6 +335,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Real-Time Live Company ATS Connections Marquee ───────────── */}
+      <CompanyConnectionsMarquee />
 
       {/* ── Section 1: How Students Benefit ───────────────────────── */}
       <section className="py-16 sm:py-20 bg-white border-b border-slate-100">

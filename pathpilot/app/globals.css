@@ -466,3 +466,58 @@ a:hover { color: var(--violet-dark); }
 .star { color: #F59E0B; }
 .star-empty { color: var(--border-dark); }
 
+/* ── Infinite Horizontal Marquee Ticker ──────────────────────────────────── */
+@keyframes marquee-scroll-left {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes marquee-scroll-right {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-marquee-left {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll-left 42s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-right {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll-right 42s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-left-fast {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll-left 34s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-right-fast {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll-right 36s linear infinite;
+  will-change: transform;
+}
+
+.marquee-row:hover .animate-marquee-left,
+.marquee-row:hover .animate-marquee-right,
+.marquee-row:hover .animate-marquee-left-fast,
+.marquee-row:hover .animate-marquee-right-fast {
+  animation-play-state: paused;
+}
+
+
