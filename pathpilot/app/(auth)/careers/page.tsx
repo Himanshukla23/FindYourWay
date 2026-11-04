@@ -352,7 +352,7 @@ export default function CareersPage() {
                       onClick={() => setSelectedRoleForModal(job)}
                       className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors inline-flex items-center gap-1 cursor-pointer"
                     >
-                      View Details &amp; Spec &rarr;
+                      View Details & Spec →
                     </button>
 
                     <div className="flex items-center gap-2">

@@ -344,7 +344,7 @@ export default function StudentSignUpPage() {
         >
           <span>Are you an industry professional? </span>
           <Link href="/mentor/sign-up" style={{ color: '#4F46E5', fontWeight: 600 }}>
-            Become a Mentor &rarr;
+            Become a Mentor →
           </Link>
         </div>
       </div>

@@ -201,7 +201,7 @@ export default function MentorProfilePage() {
               href="/mentor/onboarding"
               className="px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 font-bold text-xs whitespace-nowrap self-start sm:self-auto shrink-0 shadow-xs"
             >
-              {isPending ? 'Update Application' : 'Complete Onboarding &rarr;'}
+              {isPending ? 'Update Application' : 'Complete Onboarding →'}
             </Link>
           )}
         </div>

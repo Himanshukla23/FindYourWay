@@ -70,8 +70,20 @@ export async function middleware(request: NextRequest) {
   const isOnboarded = request.cookies.get('pathpilot_onboarded')?.value === 'true' ||
     user?.user_metadata?.onboarding_completed === true
 
+  // ── Convenience redirects for base portal paths ─────────────────────────
+  if (pathname === '/mentor') {
+    return NextResponse.redirect(new URL('/mentor/dashboard', request.url))
+  }
+  if (pathname === '/student') {
+    return NextResponse.redirect(new URL('/student/dashboard', request.url))
+  }
+
   // ── Route Categorization ──────────────────────────────────────────────────
-  const isMentorRoute = pathname.startsWith('/mentor') && !pathname.startsWith('/mentor/sign-in') && !pathname.startsWith('/mentor/sign-up')
+  // Private mentor portal routes: strictly match /mentor or /mentor/* (never match /mentors public directory)
+  const isMentorRoute =
+    (pathname === '/mentor' || pathname.startsWith('/mentor/')) &&
+    !pathname.startsWith('/mentor/sign-in') &&
+    !pathname.startsWith('/mentor/sign-up')
   
   // Private student routes that require authentication
   const studentPrivatePaths = [

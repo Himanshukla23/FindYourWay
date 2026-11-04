@@ -435,7 +435,7 @@ export default function MentorSignUpPage() {
         >
           <span>Looking for student guidance? </span>
           <Link href="/student/sign-up" style={{ color: '#2563EB', fontWeight: 600 }}>
-            Student Sign Up &rarr;
+            Student Sign Up →
           </Link>
         </div>
       </div>

@@ -333,7 +333,7 @@ export default function StudentSignInPage() {
         >
           <span>Are you an industry professional? </span>
           <Link href="/mentor/sign-in" style={{ color: '#4F46E5', fontWeight: 600 }}>
-            Mentor Login &rarr;
+            Mentor Login →
           </Link>
         </div>
       </div>

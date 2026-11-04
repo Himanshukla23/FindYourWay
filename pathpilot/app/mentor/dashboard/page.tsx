@@ -446,7 +446,7 @@ export default function MentorDashboardPage() {
               href="/mentor/availability"
               className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline pt-2"
             >
-              Configure Availability Schedule &rarr;
+              Configure Availability Schedule →
             </Link>
           </div>
         ) : (

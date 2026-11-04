@@ -362,7 +362,7 @@ export default function MentorSignInPage() {
         >
           <span>Looking for student guidance? </span>
           <Link href="/student/sign-in" style={{ color: '#2563EB', fontWeight: 600 }}>
-            Student Portal &rarr;
+            Student Portal →
           </Link>
         </div>
       </div>
