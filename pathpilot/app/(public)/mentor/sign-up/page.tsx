@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { Eye, EyeOff, Briefcase, ArrowRight, Loader2, Check, ShieldCheck } from 'lucide-react'
+import { clearClientSessionData } from '@/lib/auth-session'
 
 export default function MentorSignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -29,6 +30,7 @@ export default function MentorSignUpPage() {
   }
 
   async function handleGoogleSignUp() {
+    clearClientSessionData()
     setGoogleLoading(true)
     setError('')
     try {
@@ -69,6 +71,7 @@ export default function MentorSignUpPage() {
       return
     }
 
+    clearClientSessionData()
     setLoading(true)
 
     try {

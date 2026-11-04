@@ -29,21 +29,21 @@ export async function GET(request: Request) {
           .eq('user_id', user.id)
           .maybeSingle()
 
+        let query = supabase.from('bookings').select('*')
         if (mentor?.id) {
-          const { data: bookings } = await supabase
-            .from('bookings')
-            .select('*')
-            .eq('mentor_id', mentor.id)
-            .order('booking_date', { ascending: true })
-
-          if (bookings) {
-            return NextResponse.json({
-              success: true,
-              bookings,
-              isDemo: false,
-            })
-          }
+          query = query.or(`mentor_id.eq.${mentor.id},mentor_email.eq.${user.email}`)
+        } else {
+          query = query.eq('mentor_email', user.email)
         }
+
+        const { data: bookings } = await query.order('booking_date', { ascending: true })
+
+        // Strictly isolate authenticated user data; never expose other users' bookings
+        return NextResponse.json({
+          success: true,
+          bookings: bookings || [],
+          isDemo: false,
+        })
       }
     }
 
@@ -182,33 +182,56 @@ export async function POST(request: Request) {
       )
     }
 
-    // Read existing cookie bookings
-    const raw = cookieStore.get('pathpilot_user_bookings')?.value
-    let list: any[] = []
-    if (raw) {
-      try {
-        list = JSON.parse(decodeURIComponent(raw))
-      } catch {}
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (supabaseUrl && supabaseAnonKey) {
+      const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll() {},
+        },
+      })
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user) {
+        await supabase.from('bookings').upsert({
+          id: newBooking.id,
+          mentor_id: newBooking.mentor_id || user.id,
+          mentor_name: newBooking.mentor_name,
+          mentor_title: newBooking.mentor_title,
+          mentor_email: user.email,
+          user_name: newBooking.user_name || newBooking.student_name,
+          user_email: newBooking.user_email || newBooking.student_email,
+          student_email: newBooking.student_email || newBooking.user_email,
+          booking_date: newBooking.date,
+          start_time: newBooking.start_time,
+          duration_minutes: newBooking.duration_minutes || newBooking.duration_mins || 30,
+          topic: newBooking.topic,
+          notes: newBooking.notes,
+          meet_link: newBooking.meet_link || newBooking.meeting_link,
+          meeting_link: newBooking.meeting_link || newBooking.meet_link,
+          status: newBooking.status || 'confirmed',
+          amount_inr: newBooking.amount_inr || 0,
+          created_at: newBooking.created_at || new Date().toISOString(),
+        })
+
+        return NextResponse.json({
+          success: true,
+          booking: newBooking,
+        })
+      }
     }
-    if (!Array.isArray(list)) list = []
 
-    // Filter out duplicate and prepend new booking
-    const filtered = list.filter((b) => b.id !== newBooking.id)
-    filtered.unshift(newBooking)
-
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       booking: newBooking,
-      bookings: filtered,
     })
-
-    response.cookies.set('pathpilot_user_bookings', encodeURIComponent(JSON.stringify(filtered)), {
-      path: '/',
-      maxAge: 2592000, // 30 days
-      sameSite: 'lax',
-    })
-
-    return response
   } catch (err: any) {
     console.error('[API /mentor/bookings POST] Error:', err)
     return NextResponse.json(

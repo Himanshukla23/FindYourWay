@@ -157,33 +157,52 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
     draft_step: initialData?.draft_step || 1,
   })
 
-  // Load saved draft from localStorage or user session on mount
+  // Load saved draft and enforce authenticated user session on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      try {
-        const savedDraft = localStorage.getItem('pathpilot_mentor_draft')
-        if (savedDraft) {
-          const parsed = JSON.parse(savedDraft)
-          setForm((prev) => ({ ...prev, ...parsed }))
-          if (parsed.draft_step && mode === 'onboarding') {
-            setCurrentStep(parsed.draft_step)
-          }
-        }
-      } catch {}
-
-      // Try fetching existing session user info if empty
       import('@/lib/supabase/client').then(({ createClient }) => {
         const supabase = createClient()
         if (supabase) {
           supabase.auth.getUser().then(({ data: { user } }) => {
             if (user) {
+              const meta = user.user_metadata || {}
+              const currentUserName = meta.full_name || meta.name || (user.email ? user.email.split('@')[0] : '')
+              const currentUserEmail = user.email || ''
+
+              // Check user-scoped draft or general draft
+              let draftData: any = null
+              try {
+                const userKey = `pathpilot_mentor_draft_${user.id}`
+                const rawUserDraft = localStorage.getItem(userKey)
+                if (rawUserDraft) {
+                  draftData = JSON.parse(rawUserDraft)
+                } else {
+                  const genericDraft = localStorage.getItem('pathpilot_mentor_draft')
+                  if (genericDraft) {
+                    const parsed = JSON.parse(genericDraft)
+                    // Only use if email matches or no email is specified
+                    if (!parsed.email || parsed.email.toLowerCase() === currentUserEmail.toLowerCase()) {
+                      draftData = parsed
+                    } else {
+                      localStorage.removeItem('pathpilot_mentor_draft')
+                    }
+                  }
+                }
+              } catch {}
+
               setForm((prev) => ({
                 ...prev,
-                full_name: prev.full_name || user.user_metadata?.full_name || '',
-                email: prev.email || user.email || '',
-                title: prev.title || user.user_metadata?.initial_job_title || '',
-                organisation: prev.organisation || user.user_metadata?.initial_company || '',
+                ...(draftData || {}),
+                // Always prioritize authenticated user's identity
+                full_name: currentUserName || (draftData?.full_name ?? prev.full_name),
+                email: currentUserEmail || (draftData?.email ?? prev.email),
+                title: meta.initial_job_title || draftData?.title || prev.title,
+                organisation: meta.initial_company || draftData?.organisation || prev.organisation,
               }))
+
+              if (draftData?.draft_step && mode === 'onboarding') {
+                setCurrentStep(draftData.draft_step)
+              }
             }
           })
         }
@@ -194,10 +213,11 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
   // Save draft locally on form change
   const saveLocalDraft = (updatedForm: MentorOnboardingFormData, stepNum: number) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(
-        'pathpilot_mentor_draft',
-        JSON.stringify({ ...updatedForm, draft_step: stepNum })
-      )
+      const payload = JSON.stringify({ ...updatedForm, draft_step: stepNum })
+      localStorage.setItem('pathpilot_mentor_draft', payload)
+      if (updatedForm.email) {
+        localStorage.setItem(`pathpilot_mentor_draft_${updatedForm.email}`, payload)
+      }
     }
   }
 

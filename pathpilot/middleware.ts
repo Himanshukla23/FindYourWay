@@ -63,9 +63,10 @@ export async function middleware(request: NextRequest) {
   const isAuthenticated = !!user || hasDemoSession
 
   // ── Role & Verification Status Resolution ─────────────────────────────────
-  // Respect cookie role override first (e.g. when user clicks "SWITCH TO STUDENT" or "SWITCH TO MENTOR")
+  // The authenticated user's metadata role is the absolute source of truth
+  const userMetadataRole = user?.user_metadata?.role as 'student' | 'mentor' | undefined
   const cookieRole = request.cookies.get('pathpilot_user_role')?.value as 'student' | 'mentor' | undefined
-  const role = cookieRole || (user?.user_metadata?.role as 'student' | 'mentor' | undefined) || 'student'
+  const role = userMetadataRole || cookieRole || 'student'
   const mentorStatus = user?.user_metadata?.mentor_status || 'approved'
   const isOnboarded = request.cookies.get('pathpilot_onboarded')?.value === 'true' ||
     user?.user_metadata?.onboarding_completed === true

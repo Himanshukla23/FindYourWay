@@ -37,10 +37,42 @@ export async function GET(request: Request) {
             isDemo: false,
           })
         }
+
+        // If authenticated but no DB row exists yet, synthesize directly from registered user metadata
+        const meta = user.user_metadata || {}
+        const synthesizedProfile = {
+          id: user.id,
+          user_id: user.id,
+          full_name: meta.full_name || meta.name || (user.email ? user.email.split('@')[0] : 'Mentor'),
+          email: user.email,
+          title: meta.initial_job_title || 'Software Engineer',
+          organisation: meta.initial_company || 'Tech Enterprise',
+          avatar_url: meta.avatar_url || meta.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+          years_experience: 4,
+          primary_domain: 'Software Engineering',
+          skills: ['System Design', 'React / Next.js', 'Python', 'PostgreSQL'],
+          mentoring_topics: ['Resume Review & Project Critique', 'Mock Technical Interview'],
+          languages: ['English', 'Hindi'],
+          bio: 'Passionate engineering leader dedicated to mentoring computer science students on real-world systems, clean architecture, and technical interview excellence.',
+          session_price_inr: 499,
+          session_duration_mins: [30, 60],
+          country: 'India',
+          timezone: 'Asia/Kolkata',
+          verification_status: meta.mentor_status || 'draft',
+          linkedin_url: meta.linkedin_url || 'https://linkedin.com',
+          created_at: user.created_at,
+          updated_at: user.updated_at || new Date().toISOString(),
+        }
+
+        return NextResponse.json({
+          success: true,
+          profile: synthesizedProfile,
+          isDemo: false,
+        })
       }
     }
 
-    // Fallback demo/cookie profile
+    // Fallback demo/cookie profile only if completely unauthenticated
     const demoProfileCookie = cookieStore.get('pathpilot_mentor_profile')?.value
     if (demoProfileCookie) {
       try {
@@ -143,7 +175,7 @@ export async function POST(request: Request) {
               terms_accepted: Boolean(profile.terms_accepted),
               draft_step: profile.draft_step || 1,
               verification_status: verificationStatus,
-              is_verified: false, // Never auto-verify before actual admin verification
+              is_verified: false,
               is_demo_profile: false,
               is_available: true,
               updated_at: new Date().toISOString(),
@@ -151,47 +183,37 @@ export async function POST(request: Request) {
             { onConflict: 'user_id' }
           )
           .select()
-          .single()
+          .maybeSingle()
 
-        if (!upsertError && upserted) {
-          // Update user metadata status
-          await supabase.auth.updateUser({
-            data: { mentor_status: verificationStatus },
-          })
-
-          const response = NextResponse.json({
-            success: true,
-            profile: upserted,
-            verification_status: verificationStatus,
-          })
-
-          // Update cookie cache
-          response.cookies.set(
-            'pathpilot_mentor_profile',
-            encodeURIComponent(JSON.stringify(upserted)),
-            { path: '/', maxAge: 60 * 60 * 24 * 30 }
-          )
-
-          return response
+        if (upsertError) {
+          console.error('[API /mentor/profile POST] Upsert error:', upsertError)
         }
+
+        // Update user metadata status
+        await supabase.auth.updateUser({
+          data: {
+            full_name: profile.full_name || user.user_metadata?.full_name,
+            mentor_status: verificationStatus,
+            initial_job_title: profile.title || user.user_metadata?.initial_job_title,
+            initial_company: profile.organisation || user.user_metadata?.initial_company,
+          },
+        })
+
+        return NextResponse.json({
+          success: true,
+          profile: upserted || profileToSave,
+          verification_status: verificationStatus,
+        })
       }
     }
 
-    // Standalone / Demo mode persistence via cookie
-    const response = NextResponse.json({
+    // Standalone / Demo mode persistence
+    return NextResponse.json({
       success: true,
       profile: profileToSave,
       verification_status: verificationStatus,
       isDemo: true,
     })
-
-    response.cookies.set(
-      'pathpilot_mentor_profile',
-      encodeURIComponent(JSON.stringify(profileToSave)),
-      { path: '/', maxAge: 60 * 60 * 24 * 30 }
-    )
-
-    return response
   } catch (err: any) {
     console.error('[API /mentor/profile POST] Error:', err)
     return NextResponse.json(

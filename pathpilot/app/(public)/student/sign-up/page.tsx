@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { Eye, EyeOff, GraduationCap, ArrowRight, Loader2, Check } from 'lucide-react'
+import { clearClientSessionData } from '@/lib/auth-session'
 
 export default function StudentSignUpPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -27,6 +28,7 @@ export default function StudentSignUpPage() {
   }
 
   async function handleGoogleSignUp() {
+    clearClientSessionData()
     setGoogleLoading(true)
     setError('')
     try {
@@ -67,6 +69,7 @@ export default function StudentSignUpPage() {
       return
     }
 
+    clearClientSessionData()
     setLoading(true)
 
     try {

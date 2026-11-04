@@ -17,6 +17,7 @@ import {
   Globe,
 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
+import { clearClientSessionData } from '@/lib/auth-session'
 
 const mentorNavItems = [
   { href: '/mentor/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
@@ -56,21 +57,9 @@ export function MentorSidebar({
     } catch (e) {
       console.error('Error signing out:', e)
     } finally {
-      document.cookie = 'pathpilot_demo_session=; path=/; max-age=0'
-      document.cookie = 'pathpilot_user_role=; path=/; max-age=0'
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('pathpilot_user_role')
-      }
+      clearClientSessionData()
       window.location.href = '/'
     }
-  }
-
-  function handleSwitchToStudent() {
-    document.cookie = 'pathpilot_user_role=student; path=/; max-age=2592000'
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('pathpilot_user_role', 'student')
-    }
-    window.location.href = '/dashboard'
   }
 
   return (
@@ -190,17 +179,6 @@ export function MentorSidebar({
               <Globe size={16} className="text-neutral-500" />
               <span>Landing Page</span>
             </Link>
-
-            {/* Switch to Student Portal */}
-            <div style={{ padding: '10px 14px' }}>
-              <button
-                onClick={handleSwitchToStudent}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md border border-[#E5E3DC] bg-white hover:bg-[#FAF9F6] text-neutral-800 text-xs font-tech-mono font-bold tracking-wider transition-all cursor-pointer"
-              >
-                <ArrowRightLeft size={13} className="text-neutral-500" />
-                <span>SWITCH TO STUDENT</span>
-              </button>
-            </div>
           </div>
         </nav>
 

@@ -17,6 +17,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
+import { clearClientSessionData } from '@/lib/auth-session'
 
 const navItems = [
   { href: '/dashboard',     label: 'Dashboard',       icon: LayoutDashboard },
@@ -59,12 +60,7 @@ export function Sidebar({
     } catch (e) {
       console.error('Error signing out:', e)
     } finally {
-      document.cookie = 'pathpilot_demo_session=; path=/; max-age=0'
-      document.cookie = 'pathpilot_onboarded=; path=/; max-age=0'
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('pathpilot_demo_session')
-        localStorage.removeItem('pathpilot_onboarding_draft')
-      }
+      clearClientSessionData()
       window.location.href = '/sign-in'
     }
   }
@@ -205,7 +201,7 @@ export function Sidebar({
           {/* Sign Out Button */}
           <button
             onClick={handleSignOut}
-            title="Sign out / Switch account"
+            title="Sign out"
             aria-label="Sign out"
             className="p-1.5 rounded-md hover:bg-neutral-200 text-neutral-400 hover:text-black transition-colors"
           >

@@ -420,8 +420,8 @@ export async function getBookings(userEmail?: string): Promise<BookingResponse[]
     const res = await fetch(`/api/bookings${query}`)
     if (res.ok) {
       const json = await res.json()
-      if (Array.isArray(json) && json.length > 0) return json
-      if (json?.bookings && Array.isArray(json.bookings) && json.bookings.length > 0) return json.bookings
+      if (Array.isArray(json)) return json
+      if (json?.bookings && Array.isArray(json.bookings)) return json.bookings
     }
   } catch {}
 
@@ -434,15 +434,15 @@ export async function getBookings(userEmail?: string): Promise<BookingResponse[]
       if (res.ok) {
         markBackendStatus(true)
         const json = await res.json()
-        if (Array.isArray(json) && json.length > 0) return json
-        if (json?.bookings && Array.isArray(json.bookings) && json.bookings.length > 0) return json.bookings
+        if (Array.isArray(json)) return json
+        if (json?.bookings && Array.isArray(json.bookings)) return json.bookings
       }
     } catch {
       markBackendStatus(false)
     }
   }
 
-  return getLocalBookings()
+  return []
 }
 
 /**

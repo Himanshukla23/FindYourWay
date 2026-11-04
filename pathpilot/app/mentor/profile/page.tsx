@@ -43,14 +43,6 @@ export default function MentorProfilePage() {
         const data = await res.json()
         if (data.success && data.profile) {
           setProfile(data.profile)
-        } else {
-          // Check local draft fallback
-          if (typeof window !== 'undefined') {
-            const draft = localStorage.getItem('pathpilot_mentor_draft')
-            if (draft) {
-              setProfile(JSON.parse(draft))
-            }
-          }
         }
       } catch (err) {
         console.error('Error fetching mentor profile:', err)
@@ -59,25 +51,74 @@ export default function MentorProfilePage() {
       }
     }
     loadProfile()
+
+    // Sync directly with Supabase user auth
+    if (typeof window !== 'undefined') {
+      import('@/lib/supabase/client').then(({ createClient }) => {
+        const supabase = createClient()
+        if (supabase) {
+          supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user) {
+              setProfile((prev) => {
+                const meta = user.user_metadata || {}
+                const name = meta.full_name || meta.name || (user.email ? user.email.split('@')[0] : 'Mentor')
+                if (!prev) {
+                  return {
+                    id: user.id,
+                    user_id: user.id,
+                    full_name: name,
+                    email: user.email || '',
+                    title: meta.initial_job_title || 'Software Engineer',
+                    organisation: meta.initial_company || 'Tech Enterprise',
+                    avatar_url: meta.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+                    years_experience: 4,
+                    primary_domain: 'Software Engineering',
+                    skills: ['System Design', 'React / Next.js', 'Python', 'PostgreSQL'],
+                    mentoring_topics: ['Resume Review & Project Critique', 'Mock Technical Interview'],
+                    languages: ['English', 'Hindi'],
+                    bio: 'Passionate engineering leader dedicated to mentoring computer science students on real-world systems, clean architecture, and technical interview excellence.',
+                    session_price_inr: 499,
+                    session_duration_mins: [30, 60],
+                    country: 'India',
+                    timezone: 'Asia/Kolkata',
+                    verification_status: meta.mentor_status || 'draft',
+                    linkedin_url: meta.linkedin_url || 'https://linkedin.com',
+                    created_at: user.created_at,
+                    updated_at: user.updated_at || new Date().toISOString(),
+                  } as MentorProfile
+                }
+                return {
+                  ...prev,
+                  full_name: prev.full_name || name,
+                  email: prev.email || user.email || '',
+                  title: prev.title || meta.initial_job_title || 'Software Engineer',
+                  organisation: prev.organisation || meta.initial_company || 'Tech Enterprise',
+                }
+              })
+            }
+          })
+        }
+      })
+    }
   }, [])
 
   const defaultProfile: Partial<MentorProfile> = {
-    full_name: 'Industry Mentor',
-    email: 'mentor@pathpilot.ai',
-    title: 'Lead Software Engineer',
+    full_name: 'Mentor Profile',
+    email: '',
+    title: 'Software Engineer',
     organisation: 'Tech Enterprise',
     avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-    years_experience: 6,
+    years_experience: 4,
     primary_domain: 'Software Engineering',
-    skills: ['System Design', 'React / Next.js', 'Python', 'PostgreSQL', 'Microservices'],
-    mentoring_topics: ['Resume Review & Project Critique', 'System Design Fundamentals', 'Mock Technical Interview'],
+    skills: ['System Design', 'React / Next.js', 'Python', 'PostgreSQL'],
+    mentoring_topics: ['Resume Review & Project Critique', 'Mock Technical Interview'],
     languages: ['English', 'Hindi'],
     bio: 'Passionate engineering leader dedicated to mentoring computer science students on real-world systems, clean architecture, and technical interview excellence.',
-    session_price_inr: 599,
+    session_price_inr: 499,
     session_duration_mins: [30, 60],
     country: 'India',
     timezone: 'Asia/Kolkata',
-    verification_status: 'pending_approval',
+    verification_status: 'draft',
     linkedin_url: 'https://linkedin.com',
   }
 

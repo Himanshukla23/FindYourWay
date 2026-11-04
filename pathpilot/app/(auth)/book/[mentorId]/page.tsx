@@ -238,29 +238,23 @@ function BookMentorContent() {
 
       setConfirmedBooking(confirmedData)
 
-      // Persist to localStorage for student sessions & dashboard
-      if (typeof window !== 'undefined') {
+      // Persist to user-scoped storage & server database
+      if (typeof window !== 'undefined' && bookingUserEmail) {
         try {
-          const raw = localStorage.getItem('pathpilot_user_bookings')
+          const key = `pathpilot_user_bookings_${bookingUserEmail}`
+          const raw = localStorage.getItem(key)
           let list: any[] = raw ? JSON.parse(raw) : []
           if (!Array.isArray(list)) list = []
           const filtered = list.filter((b: any) => b.id !== confirmedData.id)
           filtered.unshift(confirmedData)
-          localStorage.setItem('pathpilot_user_bookings', JSON.stringify(filtered))
-          document.cookie = `pathpilot_user_bookings=${encodeURIComponent(JSON.stringify(filtered))}; path=/; max-age=2592000`
+          localStorage.setItem(key, JSON.stringify(filtered))
         } catch (e) {
           console.error('Error saving local booking:', e)
         }
       }
 
-      // Synchronize to /api/bookings and /api/mentor/bookings
+      // Synchronize to /api/bookings database endpoint
       fetch('/api/bookings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(confirmedData),
-      }).catch(() => {})
-
-      fetch('/api/mentor/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(confirmedData),

@@ -120,39 +120,19 @@ export default function MentorDashboardPage() {
         })
         .catch(() => {})
 
-      // 3. Load upcoming demo/mock bookings
-      const storedBookings = localStorage.getItem('pathpilot_user_bookings')
-      if (storedBookings) {
-        try {
-          const parsed = JSON.parse(storedBookings)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setUpcomingMeetings(parsed)
+      // 3. Load authenticated mentor bookings from server
+      fetch('/api/mentor/bookings')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.bookings)) {
+            setUpcomingMeetings(data.bookings)
+          } else {
+            setUpcomingMeetings([])
           }
-        } catch {}
-      } else {
-        // Sample initial meeting for demonstration
-        setUpcomingMeetings([
-          {
-            id: 'demo-meet-1',
-            mentor_id: 'mentor-1',
-            mentor_name: 'You',
-            mentor_title: 'Senior Engineer',
-            user_name: 'Priyanshu Sharma',
-            user_email: 'priyanshu@college.edu',
-            date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-            start_time: '18:00',
-            duration_minutes: 30,
-            topic: 'System Design & Redis Cache Invalidation Review',
-            notes: 'Looking for feedback on backend microservices architecture.',
-            meet_link: 'https://meet.google.com/xyz-demo-mock',
-            google_calendar_status: 'CONFIRMED',
-            calendar_ics_url: '',
-            status: 'confirmed',
-            amount_inr: 500,
-            created_at: new Date().toISOString(),
-          },
-        ])
-      }
+        })
+        .catch(() => {
+          setUpcomingMeetings([])
+        })
       setTodayStr(new Date().toISOString().split('T')[0])
     }
   }, [])

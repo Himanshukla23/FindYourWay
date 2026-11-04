@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Eye, EyeOff, Briefcase, ArrowRight, Loader2, ShieldCheck, AlertCircle } from 'lucide-react'
+import { clearClientSessionData } from '@/lib/auth-session'
 
 export default function MentorSignInPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -32,6 +33,7 @@ export default function MentorSignInPage() {
   const isDemoMode = !process.env.NEXT_PUBLIC_SUPABASE_URL
 
   async function handleGoogleSignIn() {
+    clearClientSessionData()
     setGoogleLoading(true)
     setError('')
     try {
@@ -72,6 +74,7 @@ export default function MentorSignInPage() {
       return
     }
 
+    clearClientSessionData()
     setLoading(true)
 
     try {

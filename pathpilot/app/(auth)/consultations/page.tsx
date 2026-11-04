@@ -64,26 +64,11 @@ export default function ConsultationsPage() {
   const loadBookings = async () => {
     setIsLoading(true)
     try {
-      let data = await getBookings()
-      if ((!data || data.length === 0) && typeof window !== 'undefined') {
-        const raw = localStorage.getItem('pathpilot_user_bookings')
-        if (raw) {
-          try {
-            data = JSON.parse(raw)
-          } catch {}
-        }
-      }
+      const data = await getBookings()
       setBookings(data || [])
     } catch (err) {
       console.error('Failed to load bookings:', err)
-      if (typeof window !== 'undefined') {
-        const raw = localStorage.getItem('pathpilot_user_bookings')
-        if (raw) {
-          try {
-            setBookings(JSON.parse(raw))
-          } catch {}
-        }
-      }
+      setBookings([])
     } finally {
       setIsLoading(false)
     }

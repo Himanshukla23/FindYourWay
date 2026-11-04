@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Eye, EyeOff, GraduationCap, ArrowRight, Loader2, Sparkles, AlertCircle } from 'lucide-react'
+import { clearClientSessionData } from '@/lib/auth-session'
 
 export default function StudentSignInPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -32,6 +33,7 @@ export default function StudentSignInPage() {
   const isDemoMode = !process.env.NEXT_PUBLIC_SUPABASE_URL
 
   async function handleGoogleSignIn() {
+    clearClientSessionData()
     setGoogleLoading(true)
     setError('')
     try {
@@ -72,6 +74,7 @@ export default function StudentSignInPage() {
       return
     }
 
+    clearClientSessionData()
     setLoading(true)
 
     try {
