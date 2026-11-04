@@ -23,7 +23,7 @@ import {
   MapPin,
   ExternalLink,
 } from 'lucide-react'
-import { BookingResponse, fetchJobs } from '@/lib/api-client'
+import { BookingResponse, fetchJobs, getBookings } from '@/lib/api-client'
 import { JobListing } from '@/types'
 
 const INTEREST_LABELS: Record<string, string> = {
@@ -118,6 +118,12 @@ export default function DashboardPage() {
           const parsedB = JSON.parse(storedBookings)
           if (Array.isArray(parsedB)) setUpcomingBookings(parsedB)
         } catch {}
+      } else {
+        getBookings()
+          .then((b) => {
+            if (b && b.length > 0) setUpcomingBookings(b)
+          })
+          .catch(() => {})
       }
     } catch (e) {
       console.error('Error hydrating dashboard profile:', e)

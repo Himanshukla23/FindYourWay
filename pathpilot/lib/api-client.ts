@@ -414,6 +414,17 @@ export async function createBooking(payload: BookingPayload): Promise<BookingRes
  * Retrieve user bookings
  */
 export async function getBookings(userEmail?: string): Promise<BookingResponse[]> {
+  // First attempt local /api/bookings Next.js API route
+  try {
+    const query = userEmail ? `?user_email=${encodeURIComponent(userEmail)}` : ''
+    const res = await fetch(`/api/bookings${query}`)
+    if (res.ok) {
+      const json = await res.json()
+      if (Array.isArray(json) && json.length > 0) return json
+      if (json?.bookings && Array.isArray(json.bookings) && json.bookings.length > 0) return json.bookings
+    }
+  } catch {}
+
   if (isBackendUsable()) {
     try {
       const query = userEmail ? `?user_email=${encodeURIComponent(userEmail)}` : ''

@@ -89,6 +89,8 @@ export async function middleware(request: NextRequest) {
   const studentPrivatePaths = [
     '/dashboard',
     '/student/dashboard',
+    '/consultations',
+    '/student/bookings',
     '/onboarding',
     '/profile',
     '/student/profile',
@@ -124,6 +126,9 @@ export async function middleware(request: NextRequest) {
   if (isAuthenticated && !isSwitchingAccount) {
     // A: Prevent Student accounts from accessing Mentor portal
     if (role === 'student' && isMentorRoute) {
+      if (pathname.startsWith('/mentor/bookings')) {
+        return NextResponse.redirect(new URL('/consultations', request.url))
+      }
       const redirectUrl = new URL('/student/dashboard', request.url)
       redirectUrl.searchParams.set('notice', 'mentor_access_denied')
       return NextResponse.redirect(redirectUrl)
@@ -131,6 +136,9 @@ export async function middleware(request: NextRequest) {
 
     // B: Prevent Mentor accounts from accessing private Student management portals
     if (role === 'mentor' && isPrivateStudentRoute) {
+      if (pathname === '/consultations' || pathname.startsWith('/consultations') || pathname.startsWith('/student/bookings')) {
+        return NextResponse.redirect(new URL('/mentor/bookings', request.url))
+      }
       const redirectUrl = new URL('/mentor/dashboard', request.url)
       redirectUrl.searchParams.set('notice', 'student_access_denied')
       return NextResponse.redirect(redirectUrl)

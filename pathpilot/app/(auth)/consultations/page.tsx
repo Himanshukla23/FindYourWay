@@ -64,10 +64,26 @@ export default function ConsultationsPage() {
   const loadBookings = async () => {
     setIsLoading(true)
     try {
-      const data = await getBookings()
-      setBookings(data)
+      let data = await getBookings()
+      if ((!data || data.length === 0) && typeof window !== 'undefined') {
+        const raw = localStorage.getItem('pathpilot_user_bookings')
+        if (raw) {
+          try {
+            data = JSON.parse(raw)
+          } catch {}
+        }
+      }
+      setBookings(data || [])
     } catch (err) {
       console.error('Failed to load bookings:', err)
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem('pathpilot_user_bookings')
+        if (raw) {
+          try {
+            setBookings(JSON.parse(raw))
+          } catch {}
+        }
+      }
     } finally {
       setIsLoading(false)
     }
@@ -151,9 +167,18 @@ export default function ConsultationsPage() {
 
   const backendUrl = process.env.NEXT_PUBLIC_PYTHON_BACKEND_URL || 'http://localhost:8000'
 
-  const activeBookings = bookings.filter(b => b.status === 'confirmed' || b.status === 'session_scheduled')
-  const completedBookings = bookings.filter(b => b.status === 'completed' || b.status === 'session_completed')
-  const pastOrCancelled = bookings.filter(b => b.status === 'cancelled' || b.status === 'disputed')
+  const activeBookings = bookings.filter(b => {
+    const s = (b.status || '').toLowerCase()
+    return s === 'confirmed' || s === 'session_scheduled' || s === 'demo_confirmed' || s === 'pending'
+  })
+  const completedBookings = bookings.filter(b => {
+    const s = (b.status || '').toLowerCase()
+    return s === 'completed' || s === 'session_completed'
+  })
+  const pastOrCancelled = bookings.filter(b => {
+    const s = (b.status || '').toLowerCase()
+    return s === 'cancelled' || s === 'disputed' || s === 'refunded'
+  })
 
   return (
     <div className="page-container animate-fade-in space-y-8">

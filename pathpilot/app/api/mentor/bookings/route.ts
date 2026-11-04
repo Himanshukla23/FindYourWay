@@ -169,3 +169,51 @@ export async function PATCH(request: Request) {
     )
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const cookieStore = await cookies()
+    const newBooking = await request.json()
+
+    if (!newBooking || !newBooking.id) {
+      return NextResponse.json(
+        { success: false, error: 'Valid booking object with id is required' },
+        { status: 400 }
+      )
+    }
+
+    // Read existing cookie bookings
+    const raw = cookieStore.get('pathpilot_user_bookings')?.value
+    let list: any[] = []
+    if (raw) {
+      try {
+        list = JSON.parse(decodeURIComponent(raw))
+      } catch {}
+    }
+    if (!Array.isArray(list)) list = []
+
+    // Filter out duplicate and prepend new booking
+    const filtered = list.filter((b) => b.id !== newBooking.id)
+    filtered.unshift(newBooking)
+
+    const response = NextResponse.json({
+      success: true,
+      booking: newBooking,
+      bookings: filtered,
+    })
+
+    response.cookies.set('pathpilot_user_bookings', encodeURIComponent(JSON.stringify(filtered)), {
+      path: '/',
+      maxAge: 2592000, // 30 days
+      sameSite: 'lax',
+    })
+
+    return response
+  } catch (err: any) {
+    console.error('[API /mentor/bookings POST] Error:', err)
+    return NextResponse.json(
+      { success: false, error: err?.message || 'Failed to persist booking' },
+      { status: 500 }
+    )
+  }
+}
