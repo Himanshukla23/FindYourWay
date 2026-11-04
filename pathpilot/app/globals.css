@@ -637,7 +637,7 @@ a:hover { color: var(--violet-dark); }
 .marquee-row:hover .animate-marquee-right,
 .marquee-row:hover .animate-marquee-left-fast,
 .marquee-row:hover .animate-marquee-right-fast {
-  animation-play-state: paused;
+  animation-play-state: running !important;
 }
 
 

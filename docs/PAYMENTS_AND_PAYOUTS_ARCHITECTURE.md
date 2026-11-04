@@ -121,3 +121,4 @@ stateDiagram-v2
    - `payouts` records the sub-merchant disbursement.
    - `refunds` records student reimbursements.
 4. **Immutable Audit Trail**: Every status transition logs `previous_status`, `new_status`, `actor`, `timestamp`, and `provider_reference`.
+

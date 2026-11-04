@@ -271,3 +271,4 @@ class StudentDashboardFinancials(BaseModel):
     refunds: List[RefundRecord] = []
     disputes: List[DisputeRecord] = []
     pending_confirmations: List[BookingPaymentRecord] = []
+
