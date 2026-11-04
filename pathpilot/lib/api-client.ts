@@ -953,6 +953,300 @@ export async function tailorResumeForJob(request: JobTailorRequest): Promise<Job
   return null
 }
 
+// ── Protected Marketplace Payments & Delayed Payouts ──────────────────────
+
+export interface CreatePaymentOrderPayload {
+  mentor_id: string
+  slot_id: string
+  topic: string
+  notes?: string
+  user_name: string
+  user_email: string
+  amount_inr: number
+  time_zone?: string
+  duration_mins?: number
+  idempotency_key?: string
+}
+
+export interface CreatePaymentOrderResult {
+  success: boolean
+  order_id: string
+  payment_id: string
+  booking_id: string
+  amount_inr: number
+  amount_paise: number
+  currency: string
+  key_id: string
+  commission_percent: number
+  mentor_earnings_inr: number
+  is_sandbox: boolean
+  message: string
+}
+
+export interface VerifyPaymentPayload {
+  payment_id: string
+  booking_id: string
+  razorpay_order_id: string
+  razorpay_payment_id: string
+  razorpay_signature: string
+  idempotency_key?: string
+}
+
+export interface VerifyPaymentResult {
+  success: boolean
+  booking_id: string
+  status: string
+  meeting_link?: string | null
+  calendar_ics_url?: string | null
+  message: string
+}
+
+export interface MentorFinancials {
+  mentor_id: string
+  total_earnings_inr: number
+  pending_earnings_inr: number
+  payout_eligible_inr: number
+  payout_completed_inr: number
+  upcoming_sessions_count: number
+  completed_sessions_count: number
+  cancelled_sessions_count: number
+  disputed_sessions_count: number
+  payout_history: Array<{
+    id: string
+    amount_inr: number
+    status: string
+    provider_payout_id?: string
+    initiated_at: string
+    completed_at?: string
+  }>
+  active_disputes: Array<{
+    id: string
+    booking_id: string
+    reason: string
+    description: string
+    status: string
+    created_at: string
+  }>
+  recent_earnings: Array<{
+    id: string
+    booking_id: string
+    gross_amount_inr: number
+    commission_amount_inr: number
+    net_earnings_inr: number
+    status: string
+    is_payout_eligible: boolean
+    is_payout_settled: boolean
+    created_at: string
+  }>
+}
+
+export interface StudentFinancials {
+  student_email: string
+  payment_history: Array<{
+    id: string
+    order_id: string
+    booking_id?: string
+    amount_inr: number
+    status: string
+    payment_method: string
+    created_at: string
+  }>
+  booking_payments: Array<{
+    id: string
+    booking_id: string
+    payment_id: string
+    mentor_id: string
+    mentor_name: string
+    topic: string
+    amount_inr: number
+    lifecycle_status: string
+    review_window_expires_at?: string
+    dispute_id?: string
+    refund_id?: string
+    created_at: string
+  }>
+  refunds: Array<{
+    id: string
+    booking_id: string
+    amount_inr: number
+    reason: string
+    status: string
+    provider_refund_id?: string
+    initiated_at: string
+  }>
+  disputes: Array<{
+    id: string
+    booking_id: string
+    reason: string
+    description: string
+    status: string
+    created_at: string
+  }>
+  pending_confirmations: any[]
+}
+
+export async function createPaymentOrder(payload: CreatePaymentOrderPayload): Promise<CreatePaymentOrderResult> {
+  const res = await fetch(`${BACKEND_URL}/api/payments/orders/create`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to initiate secure payment order.')
+  }
+  return await res.json()
+}
+
+export async function verifyPaymentCapture(payload: VerifyPaymentPayload): Promise<VerifyPaymentResult> {
+  const res = await fetch(`${BACKEND_URL}/api/payments/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Payment verification failed.')
+  }
+  return await res.json()
+}
+
+export async function getPaymentConfig(): Promise<any> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/payments/config`)
+    if (res.ok) return await res.json()
+  } catch (err) {
+    console.warn('Failed to load payment config:', err)
+  }
+  return {
+    provider: 'razorpay_route',
+    mode: 'sandbox',
+    platform_commission_percent: 15.0,
+    completion_review_window_hours: 24,
+    funds_held_in_nodal: true,
+    anti_no_show_protection: true
+  }
+}
+
+export async function mentorMarkSessionCompleted(bookingId: string, notes?: string): Promise<any> {
+  const res = await fetch(`${BACKEND_URL}/api/payments/bookings/${bookingId}/complete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ booking_id: bookingId, mentor_notes: notes || '' })
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to mark session completed.')
+  }
+  return await res.json()
+}
+
+export async function studentConfirmSessionCompleted(bookingId: string, rating = 5, feedback = ''): Promise<any> {
+  const res = await fetch(`${BACKEND_URL}/api/payments/bookings/${bookingId}/confirm-completion`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ booking_id: bookingId, rating, feedback })
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to confirm session completion.')
+  }
+  return await res.json()
+}
+
+export async function studentReportIssue(
+  bookingId: string,
+  reason: string,
+  description: string,
+  evidenceUrls: string[] = []
+): Promise<any> {
+  const res = await fetch(`${BACKEND_URL}/api/payments/bookings/${bookingId}/report-issue`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      booking_id: bookingId,
+      reason,
+      description,
+      evidence_urls: evidenceUrls
+    })
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to submit issue report.')
+  }
+  return await res.json()
+}
+
+export async function cancelBookingWithRefund(
+  bookingId: string,
+  reason: string,
+  cancelledBy: 'student' | 'mentor' = 'student'
+): Promise<any> {
+  const res = await fetch(`${BACKEND_URL}/api/payments/bookings/${bookingId}/cancel-refund`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      booking_id: bookingId,
+      reason,
+      cancelled_by: cancelledBy
+    })
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to cancel consultation.')
+  }
+  return await res.json()
+}
+
+export async function fetchMentorFinancials(mentorId: string): Promise<MentorFinancials> {
+  const res = await fetch(`${BACKEND_URL}/api/payments/mentor/${mentorId}/dashboard`)
+  if (res.ok) {
+    return await res.json()
+  }
+  return {
+    mentor_id: mentorId,
+    total_earnings_inr: 0,
+    pending_earnings_inr: 0,
+    payout_eligible_inr: 0,
+    payout_completed_inr: 0,
+    upcoming_sessions_count: 0,
+    completed_sessions_count: 0,
+    cancelled_sessions_count: 0,
+    disputed_sessions_count: 0,
+    payout_history: [],
+    active_disputes: [],
+    recent_earnings: []
+  }
+}
+
+export async function requestMentorPayoutDisbursement(mentorId: string): Promise<any> {
+  const res = await fetch(`${BACKEND_URL}/api/payments/mentor/${mentorId}/request-payout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mentor_id: mentorId })
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || 'Failed to request payout settlement.')
+  }
+  return await res.json()
+}
+
+export async function fetchStudentFinancials(studentEmail: string): Promise<StudentFinancials> {
+  const res = await fetch(`${BACKEND_URL}/api/payments/student/${encodeURIComponent(studentEmail)}/history`)
+  if (res.ok) {
+    return await res.json()
+  }
+  return {
+    student_email: studentEmail,
+    payment_history: [],
+    booking_payments: [],
+    refunds: [],
+    disputes: [],
+    pending_confirmations: []
+  }
+}
+
 
 
 

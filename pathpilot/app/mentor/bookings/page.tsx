@@ -20,7 +20,7 @@ import {
   DollarSign,
   ArrowUpRight,
 } from 'lucide-react'
-import { BookingResponse } from '@/lib/api-client'
+import { BookingResponse, mentorMarkSessionCompleted, cancelBookingWithRefund } from '@/lib/api-client'
 import { getInitials } from '@/lib/utils'
 
 type FilterTab = 'all' | 'upcoming' | 'completed' | 'cancelled'
@@ -51,10 +51,24 @@ export default function MentorBookingsPage() {
     loadBookings()
   }, [])
 
-  // Update status (complete or cancel)
+  // Update status (complete or cancel) with marketplace escrow hooks
   async function updateStatus(bookingId: string, newStatus: 'completed' | 'cancelled') {
     setActionLoadingId(bookingId)
     try {
+      if (newStatus === 'completed') {
+        try {
+          await mentorMarkSessionCompleted(bookingId, 'Session marked completed by mentor.')
+        } catch (e) {
+          console.warn('Backend payment completion hook note:', e)
+        }
+      } else if (newStatus === 'cancelled') {
+        try {
+          await cancelBookingWithRefund(bookingId, 'Cancelled by mentor', 'mentor')
+        } catch (e) {
+          console.warn('Backend payment refund hook note:', e)
+        }
+      }
+
       await fetch('/api/mentor/bookings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

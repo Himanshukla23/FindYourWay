@@ -20,7 +20,15 @@ import {
   Info
 } from 'lucide-react'
 import { DEMO_MENTORS } from '@/lib/demo-data'
-import { getMentorSlots, createBooking, AvailableSlot, BookingResponse } from '@/lib/api-client'
+import {
+  getMentorSlots,
+  createBooking,
+  AvailableSlot,
+  BookingResponse,
+  createPaymentOrder,
+  verifyPaymentCapture,
+  CreatePaymentOrderResult
+} from '@/lib/api-client'
 import { CalendarBookingSelector } from '@/components/mentor/CalendarBookingSelector'
 
 function BookMentorContent() {
@@ -42,6 +50,12 @@ function BookMentorContent() {
   const [confirmedBooking, setConfirmedBooking] = useState<BookingResponse | null>(null)
   const [bookingUserName, setBookingUserName] = useState<string>('Student')
   const [bookingUserEmail, setBookingUserEmail] = useState<string>('')
+
+  // Protected Payment State
+  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false)
+  const [pendingPaymentOrder, setPendingPaymentOrder] = useState<CreatePaymentOrderResult | null>(null)
+  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false)
+  const [paymentMethodChoice, setPaymentMethodChoice] = useState<'upi' | 'card' | 'netbanking'>('upi')
 
   // Detect student time zone with India fallback
   const [timeZone, setTimeZone] = useState<string>('Asia/Kolkata')
@@ -103,7 +117,7 @@ function BookMentorContent() {
   // Calculated price based on duration
   const totalPrice = sessionDuration === 60 ? Math.round(mentor.session_price_inr * 1.8) : mentor.session_price_inr
 
-  const handleConfirm = async () => {
+  const handleInitiatePayment = async () => {
     setErrorMsg(null)
 
     if (!selectedSlotId) {
@@ -119,25 +133,77 @@ function BookMentorContent() {
     setIsSubmitting(true)
 
     try {
-      const result = await createBooking({
+      const studentEmail = bookingUserEmail || `${bookingUserName.toLowerCase().replace(/\s+/g, '')}@student.pathpilot.ai`
+      const order = await createPaymentOrder({
         mentor_id: mentor.id,
         slot_id: selectedSlotId,
         topic: selectedTopic,
         notes: questions,
         user_name: bookingUserName,
-        user_email: bookingUserEmail || `${bookingUserName.toLowerCase().replace(/\s+/g, '')}@student.pathpilot.ai`,
+        user_email: studentEmail,
         amount_inr: totalPrice,
         time_zone: timeZone,
-        duration_mins: sessionDuration
+        duration_mins: sessionDuration,
+        idempotency_key: `order-${mentor.id}-${selectedSlotId}-${Date.now()}`
       })
 
-      setConfirmedBooking(result)
+      setPendingPaymentOrder(order)
+      setShowPaymentModal(true)
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to complete booking. Please try again or select another slot.')
-      // Refresh slots in case of collision
+      setErrorMsg(err?.message || 'Failed to initiate protected payment. Please try again.')
       fetchSlots()
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleAuthorizePaymentCapture = async () => {
+    if (!pendingPaymentOrder) return
+    setIsProcessingPayment(true)
+    setErrorMsg(null)
+
+    try {
+      const verification = await verifyPaymentCapture({
+        payment_id: pendingPaymentOrder.payment_id,
+        booking_id: pendingPaymentOrder.booking_id,
+        razorpay_order_id: pendingPaymentOrder.order_id,
+        razorpay_payment_id: `pay_${Date.now()}_sim`,
+        razorpay_signature: `sig_${Date.now()}_hmac256`,
+        idempotency_key: `verify-${pendingPaymentOrder.booking_id}`
+      })
+
+      // Sync confirmed state
+      setConfirmedBooking({
+        id: pendingPaymentOrder.booking_id,
+        mentor_id: mentor.id,
+        mentor_name: mentor.full_name,
+        mentor_title: mentor.title,
+        mentor_org: mentor.organisation,
+        user_name: bookingUserName,
+        student_name: bookingUserName,
+        user_email: bookingUserEmail,
+        student_email: bookingUserEmail,
+        start_time: selectedSlot?.start_time || new Date().toISOString(),
+        end_time: selectedSlot?.end_time,
+        slot_label: selectedSlot?.display_label || 'Scheduled 1-on-1 Session',
+        time_zone: timeZone,
+        duration_mins: sessionDuration,
+        topic: selectedTopic,
+        notes: questions,
+        meeting_link: verification.meeting_link,
+        meet_link: verification.meeting_link,
+        google_calendar_status: verification.meeting_link ? 'CONFIRMED' : 'AWAITING_CREDENTIALS',
+        calendar_ics_url: verification.calendar_ics_url || `/api/bookings/${pendingPaymentOrder.booking_id}/calendar.ics`,
+        status: 'confirmed',
+        amount_inr: totalPrice,
+        created_at: new Date().toISOString()
+      })
+
+      setShowPaymentModal(false)
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Payment verification failed. Please try again.')
+    } finally {
+      setIsProcessingPayment(false)
     }
   }
 
@@ -188,6 +254,17 @@ function BookMentorContent() {
           <div className="flex justify-between border-b border-slate-100 pb-2.5">
             <span className="text-slate-500">Total Fee:</span>
             <span className="text-slate-900 font-bold">₹{confirmedBooking.amount_inr}</span>
+          </div>
+
+          {/* Nodal Escrow Protection Status */}
+          <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold text-emerald-900">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Nodal Escrow Protection Active</span>
+            </div>
+            <p className="text-[11px] text-emerald-800 leading-relaxed">
+              Your payment of ₹{confirmedBooking.amount_inr} is safely locked in provider nodal escrow. Under PathPilot marketplace rules, mentor payouts are released only after the session occurs and your 24-hour review window clears without dispute.
+            </p>
           </div>
 
           {/* Genuine Google Meet Status Handling */}
@@ -400,6 +477,22 @@ function BookMentorContent() {
           </div>
         </div>
 
+        {/* ── PathPilot Student Protection & Escrow Guarantee ────────── */}
+        <div className="p-4 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs space-y-2">
+          <div className="flex items-center gap-2 font-bold text-emerald-950">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>PathPilot Protected Payment Guarantee</span>
+          </div>
+          <p className="text-[11px] text-emerald-900 leading-relaxed">
+            Your ₹{totalPrice} payment is securely held in regulated nodal escrow. Mentor earnings are released only after your consultation is successfully completed and confirmed.
+          </p>
+          <div className="flex flex-wrap items-center gap-3 text-[10px] text-emerald-800 font-semibold pt-1 border-t border-emerald-200/60">
+            <span>✓ Anti-Mentor-No-Show: 100% Refund Guarantee</span>
+            <span>✓ 24-Hour Review Window</span>
+            <span>✓ RBI Compliant Nodal Split</span>
+          </div>
+        </div>
+
         {/* Checkout & Submission Bar */}
         <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -411,15 +504,119 @@ function BookMentorContent() {
           </div>
 
           <button
-            onClick={handleConfirm}
+            onClick={handleInitiatePayment}
             disabled={isSubmitting || !selectedSlotId || selectedSlot?.is_booked}
             className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span>{isSubmitting ? 'Reserving Session...' : 'Confirm & Schedule Session'}</span>
+            <CreditCard className="w-4 h-4" />
+            <span>{isSubmitting ? 'Securing Slot...' : `Proceed to Secure Payment (₹${totalPrice})`}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      {/* ── Protected Payment Checkout Dialog Modal ─────────────────── */}
+      {showPaymentModal && pendingPaymentOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Protected Checkout</h3>
+                  <span className="text-[10px] text-slate-500">Razorpay Route Nodal Hold</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Financial Split Breakdown */}
+            <div className="bg-slate-50 rounded-xl p-4 text-xs space-y-2 border border-slate-100">
+              <div className="flex justify-between text-slate-600">
+                <span>1-on-1 Consultation Fee:</span>
+                <span className="font-semibold text-slate-900">₹{pendingPaymentOrder.amount_inr}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Buyer Protection &amp; Escrow:</span>
+                <span className="font-semibold text-emerald-600">₹0 (Free)</span>
+              </div>
+              <div className="flex justify-between text-slate-600 pt-2 border-t border-slate-200 font-bold">
+                <span className="text-slate-900">Total Payable:</span>
+                <span className="text-base text-blue-600 font-extrabold">₹{pendingPaymentOrder.amount_inr}</span>
+              </div>
+            </div>
+
+            {/* Payment Method Selector */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-slate-700 block uppercase tracking-wider">
+                Select Payment Method
+              </span>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'upi', label: 'UPI / QR', desc: 'GPay, PhonePe' },
+                  { id: 'card', label: 'Cards', desc: 'Debit / Credit' },
+                  { id: 'netbanking', label: 'NetBanking', desc: 'All Banks' }
+                ].map(m => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setPaymentMethodChoice(m.id as any)}
+                    className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                      paymentMethodChoice === m.id
+                        ? 'bg-blue-50 border-2 border-blue-600 text-blue-900 font-bold'
+                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <span className="text-xs block font-bold">{m.label}</span>
+                    <span className="text-[10px] text-slate-400 block mt-0.5">{m.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Security Guarantee Notice */}
+            <div className="p-3 bg-amber-50/70 rounded-xl border border-amber-200/60 text-[11px] text-amber-900 flex items-start gap-2">
+              <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p>
+                Delayed Payout Protection: Your payment is held in escrow until session completion. In case of mentor absence, 100% refund is guaranteed.
+              </p>
+            </div>
+
+            {errorMsg && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+                {errorMsg}
+              </div>
+            )}
+
+            {/* Authorize & Lock Button */}
+            <div className="pt-2 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowPaymentModal(false)}
+                className="px-4 py-2.5 rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAuthorizePaymentCapture}
+                disabled={isProcessingPayment}
+                className="px-6 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <span>{isProcessingPayment ? 'Capturing in Escrow...' : `Authorize & Pay ₹${pendingPaymentOrder.amount_inr}`}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -16,9 +16,14 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     OPENAI_API_KEY: str = ""
 
-    # Phase 4: Payments (optional)
+    # Phase 4: Payments & Marketplace Payouts
     RAZORPAY_KEY_ID: str = ""
     RAZORPAY_KEY_SECRET: str = ""
+    RAZORPAY_WEBHOOK_SECRET: str = ""
+    PAYMENT_PROVIDER: str = "razorpay_route"
+    PAYMENT_MODE: str = "sandbox"  # 'sandbox' or 'production' (requires approval)
+    PLATFORM_COMMISSION_PERCENT: float = 15.0  # 15% platform take-rate, 85% to mentor
+    COMPLETION_REVIEW_WINDOW_HOURS: int = 24  # 24 hours review window for student confirmation
 
     # Phase 4: Email / SMTP (optional)
     SMTP_HOST: str = ""

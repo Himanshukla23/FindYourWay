@@ -2,7 +2,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
-from routers import resume, career, roadmap, follow_up, mentor, marketplace_router, bookings_router, persistence_router, jobs_router
+from routers import resume, career, roadmap, follow_up, mentor, marketplace_router, bookings_router, persistence_router, jobs_router, payments_router
 
 app = FastAPI(
     title="PathPilot AI - Core Backend Service",
@@ -31,6 +31,7 @@ app.include_router(mentor.router)
 # Include Phase 4 Mentor Marketplace & Booking Routers
 app.include_router(marketplace_router.router)
 app.include_router(bookings_router.router)
+app.include_router(payments_router.router)
 
 # Include Phase 5 Persistence, Storage & Progress Tracking Routers
 app.include_router(persistence_router.router)
