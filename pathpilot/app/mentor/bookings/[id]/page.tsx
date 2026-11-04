@@ -25,7 +25,7 @@ import {
 import { BookingResponse, mentorMarkSessionCompleted, cancelBookingWithRefund } from '@/lib/api-client'
 import { getInitials } from '@/lib/utils'
 
-export default function MentorBookingDetailPage() {
+function MentorBookingDetailContent() {
   const params = useParams()
   const router = useRouter()
   const bookingId = (params?.id as string) || ''
@@ -600,5 +600,19 @@ export default function MentorBookingDetailPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function MentorBookingDetailPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="max-w-4xl mx-auto py-12 text-center text-xs text-neutral-500 font-tech-mono">
+          Loading consultation records...
+        </div>
+      }
+    >
+      <MentorBookingDetailContent />
+    </React.Suspense>
   )
 }
