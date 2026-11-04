@@ -63,7 +63,9 @@ export async function middleware(request: NextRequest) {
   const isAuthenticated = !!user || hasDemoSession
 
   // ── Role & Verification Status Resolution ─────────────────────────────────
-  const role = (user?.user_metadata?.role || request.cookies.get('pathpilot_user_role')?.value || 'student') as 'student' | 'mentor' | 'admin'
+  // Respect cookie role override first (e.g. when user clicks "SWITCH TO STUDENT" or "SWITCH TO MENTOR")
+  const cookieRole = request.cookies.get('pathpilot_user_role')?.value as 'student' | 'mentor' | undefined
+  const role = cookieRole || (user?.user_metadata?.role as 'student' | 'mentor' | undefined) || 'student'
   const mentorStatus = user?.user_metadata?.mentor_status || 'approved'
   const isOnboarded = request.cookies.get('pathpilot_onboarded')?.value === 'true' ||
     user?.user_metadata?.onboarding_completed === true
@@ -71,14 +73,11 @@ export async function middleware(request: NextRequest) {
   // ── Route Categorization ──────────────────────────────────────────────────
   const isMentorRoute = pathname.startsWith('/mentor') && !pathname.startsWith('/mentor/sign-in') && !pathname.startsWith('/mentor/sign-up')
   
-  // Private student routes that strictly require authentication & are isolated from mentor accounts
+  // Private student routes that require authentication
   const studentPrivatePaths = [
     '/dashboard',
     '/student/dashboard',
     '/onboarding',
-    '/book',
-    '/consultations',
-    '/student/bookings',
     '/profile',
     '/student/profile',
   ]
@@ -118,30 +117,24 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl)
     }
 
-    // B: Prevent Mentor accounts from accessing private Student account portals
-    // (Note: /jobs, /careers, /mentors, /resume, /roadmap are public and accessible to both roles)
+    // B: Prevent Mentor accounts from accessing private Student management portals
     if (role === 'mentor' && isPrivateStudentRoute) {
       const redirectUrl = new URL('/mentor/dashboard', request.url)
       redirectUrl.searchParams.set('notice', 'student_access_denied')
       return NextResponse.redirect(redirectUrl)
     }
 
-    // C: Mentor Verification Status Flow
-    if (role === 'mentor' && mentorStatus === 'pending_approval' && pathname === '/mentor/dashboard') {
-      const redirectUrl = new URL('/mentor/profile', request.url)
-      redirectUrl.searchParams.set('notice', 'pending_approval')
-      return NextResponse.redirect(redirectUrl)
-    }
-
-    // D: Redirect already authenticated users away from Auth pages
+    // D: Redirect already authenticated users away from general Auth pages (unless switching portal)
     if (isAuthPage && !!user) {
-      if (role === 'mentor') {
-        const dest = mentorStatus === 'pending_approval' ? '/mentor/profile' : '/mentor/dashboard'
-        return NextResponse.redirect(new URL(dest, request.url))
-      } else {
-        const dest = isOnboarded ? '/student/dashboard' : '/onboarding'
-        return NextResponse.redirect(new URL(dest, request.url))
+      // Allow mentors to view student sign in if they intend to switch
+      if (pathname.includes('student') && role === 'mentor') {
+        return supabaseResponse
       }
+      if (pathname.includes('mentor') && role === 'student') {
+        return supabaseResponse
+      }
+      const dest = role === 'mentor' ? '/mentor/dashboard' : (isOnboarded ? '/student/dashboard' : '/onboarding')
+      return NextResponse.redirect(new URL(dest, request.url))
     }
 
     // E: If student is not onboarded and tries to access private student dashboard
