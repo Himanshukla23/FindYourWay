@@ -2,11 +2,12 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { Menu, Bell, Briefcase, Users, Sparkles } from 'lucide-react'
+import { Menu, Bell, Briefcase, Users, Sparkles, Clock } from 'lucide-react'
 
 interface TopbarProps {
   onMenuClick: () => void
   pageTitle?: string
+  isMentor?: boolean
 }
 
 const ROUTE_TITLES: Record<string, string> = {
@@ -21,8 +22,11 @@ const ROUTE_TITLES: Record<string, string> = {
   '/onboarding': 'Candidate Onboarding',
 }
 
-export function Topbar({ onMenuClick, pageTitle }: TopbarProps) {
+export function Topbar({ onMenuClick, pageTitle, isMentor }: TopbarProps) {
   const pathname = usePathname()
+
+  // Auto-detect mentor context from pathname if not explicitly passed
+  const isMentorContext = Boolean(isMentor || pathname === '/mentor' || pathname.startsWith('/mentor/'))
 
   // Dynamically resolve title if not explicitly passed
   const resolvedTitle = pageTitle || ROUTE_TITLES[pathname] || ''
@@ -70,24 +74,42 @@ export function Topbar({ onMenuClick, pageTitle }: TopbarProps) {
 
       {/* Quick Access Action Pills (Koyeb Style) */}
       <div className="hidden md:flex items-center gap-2.5">
-        <Link
-          href="/jobs"
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-tech-mono font-bold bg-[#0C0D0E] text-[#00F090] border border-black/10 hover:bg-black transition-all"
-        >
-          <Briefcase size={12} className="text-[#00F090]" />
-          <span>143+ JOBS</span>
-        </Link>
-        <Link
-          href="/mentors"
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-tech-mono font-semibold bg-white text-neutral-800 border border-[#E5E3DC] hover:bg-[#FAF9F6] transition-all"
-        >
-          <Users size={12} className="text-neutral-500" />
-          <span>MENTORS</span>
-        </Link>
-        <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#00F090]/10 border border-[#00F090]/30 text-[#064E3B] font-tech-mono text-[10px] font-bold">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#00F090] animate-pulse" />
-          <span>SYSTEM READY</span>
-        </div>
+        {!isMentorContext ? (
+          <>
+            <Link
+              href="/jobs"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-tech-mono font-bold bg-[#0C0D0E] text-[#00F090] border border-black/10 hover:bg-black transition-all"
+            >
+              <Briefcase size={12} className="text-[#00F090]" />
+              <span>143+ JOBS</span>
+            </Link>
+            <Link
+              href="/mentors"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-tech-mono font-semibold bg-white text-neutral-800 border border-[#E5E3DC] hover:bg-[#FAF9F6] transition-all"
+            >
+              <Users size={12} className="text-neutral-500" />
+              <span>MENTORS</span>
+            </Link>
+            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#00F090]/10 border border-[#00F090]/30 text-[#064E3B] font-tech-mono text-[10px] font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00F090] animate-pulse" />
+              <span>SYSTEM READY</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <Link
+              href="/mentor/availability"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-tech-mono font-semibold bg-white text-neutral-800 border border-[#E5E3DC] hover:bg-[#FAF9F6] transition-all"
+            >
+              <Clock size={12} className="text-neutral-500" />
+              <span>AVAILABILITY</span>
+            </Link>
+            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#00F090]/10 border border-[#00F090]/30 text-[#064E3B] font-tech-mono text-[10px] font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00F090] animate-pulse" />
+              <span>MENTOR CONSOLE</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Actions */}

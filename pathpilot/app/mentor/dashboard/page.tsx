@@ -118,7 +118,7 @@ export default function MentorDashboardPage() {
             }
           }
         })
-        .catch(() => {})
+        .catch(() => { })
 
       // 3. Load authenticated mentor bookings from server
       fetch('/api/mentor/bookings')
@@ -247,8 +247,8 @@ export default function MentorDashboardPage() {
                 {isDisbursing
                   ? 'Transferring...'
                   : financials && financials.payout_eligible_inr > 0
-                  ? `Withdraw ₹${financials.payout_eligible_inr}`
-                  : 'No Eligible Payout'}
+                    ? `Withdraw ₹${financials.payout_eligible_inr}`
+                    : 'No Eligible Payout'}
               </span>
             </button>
           </div>
@@ -387,11 +387,10 @@ export default function MentorDashboardPage() {
         </div>
         <button
           onClick={() => setCalendarConnected((c) => !c)}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-            calendarConnected
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${calendarConnected
               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
               : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs'
-          }`}
+            }`}
         >
           {calendarConnected ? '✓ Google Calendar Connected' : 'Connect Google Calendar'}
         </button>

@@ -104,7 +104,19 @@ export default function StudentSignInPage() {
       }
 
       const user = signInData.user
-      const role = user?.user_metadata?.role || 'student'
+      let role = user?.user_metadata?.role
+
+      // Check both user_metadata role and mentor_profiles table
+      if (role !== 'mentor' && user) {
+        const { data: mentorProfile } = await supabase
+          .from('mentor_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        if (mentorProfile?.id) {
+          role = 'mentor'
+        }
+      }
 
       // Check if user is actually a mentor trying to sign in at student portal
       if (role === 'mentor') {
@@ -113,7 +125,7 @@ export default function StudentSignInPage() {
         localStorage.setItem('pathpilot_user_role', 'mentor')
         setTimeout(() => {
           window.location.href = '/mentor/dashboard'
-        }, 1200)
+        }, 800)
         return
       }
 

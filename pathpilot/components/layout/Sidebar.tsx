@@ -20,14 +20,14 @@ import { cn, getInitials } from '@/lib/utils'
 import { clearClientSessionData } from '@/lib/auth-session'
 
 const navItems = [
-  { href: '/dashboard',     label: 'Dashboard',       icon: LayoutDashboard },
-  { href: '/jobs',          label: 'Job Board (143+)',icon: Briefcase },
-  { href: '/resume',        label: 'Resume Audit',    icon: FileText },
-  { href: '/careers',       label: 'Career Tracks',   icon: Compass },
-  { href: '/roadmap',       label: 'Preparation Map', icon: Map },
-  { href: '/mentors',       label: 'Find Mentors',    icon: Users },
-  { href: '/consultations', label: 'My Sessions',     icon: Calendar },
-  { href: '/profile',       label: 'My Profile',      icon: User },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/jobs', label: 'Job Board (143+)', icon: Briefcase },
+  { href: '/resume', label: 'Resume Audit', icon: FileText },
+  { href: '/careers', label: 'Career Tracks', icon: Compass },
+  { href: '/roadmap', label: 'Preparation Map', icon: Map },
+  { href: '/mentors', label: 'Find Mentors', icon: Users },
+  { href: '/consultations', label: 'My Sessions', icon: Calendar },
+  { href: '/profile', label: 'My Profile', icon: User },
 ]
 
 interface SidebarProps {
@@ -51,11 +51,11 @@ export function Sidebar({
 
   async function handleSignOut() {
     try {
-      await fetch('/api/auth/signout', { method: 'POST' }).catch(() => {})
+      await fetch('/api/auth/signout', { method: 'POST' }).catch(() => { })
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
       if (supabase) {
-        await supabase.auth.signOut().catch(() => {})
+        await supabase.auth.signOut().catch(() => { })
       }
     } catch (e) {
       console.error('Error signing out:', e)

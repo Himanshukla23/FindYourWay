@@ -8,12 +8,9 @@ import {
   Clock,
   Calendar,
   Settings,
-  Briefcase,
   X,
   LogOut,
   Sparkles,
-  Compass,
-  ArrowRightLeft,
   Globe,
 } from 'lucide-react'
 import { cn, getInitials } from '@/lib/utils'
@@ -145,31 +142,12 @@ export function MentorSidebar({
               )
             })}
 
-            {/* Quick Explore Links */}
+            {/* Platform links */}
             <div style={{ margin: '12px 14px 4px', paddingTop: 10, borderTop: '1px solid #E5E3DC' }}>
               <span className="font-tech-mono text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-2">
-                // PLATFORM FEEDS
+                // PLATFORM
               </span>
             </div>
-
-            <Link
-              href="/jobs"
-              onClick={onClose}
-              className="nav-item"
-            >
-              <Briefcase size={16} className="text-neutral-500" />
-              <span style={{ flex: 1 }}>Job Board</span>
-              <span className="font-tech-mono text-[10px] px-1.5 py-0.5 rounded bg-[#0C0D0E] text-[#00F090] font-bold">143+</span>
-            </Link>
-
-            <Link
-              href="/careers"
-              onClick={onClose}
-              className="nav-item"
-            >
-              <Compass size={16} className="text-neutral-500" />
-              <span>Career Tracks</span>
-            </Link>
 
             <Link
               href="/"

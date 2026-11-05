@@ -186,21 +186,19 @@ export default function ConsultationsPage() {
         <div className="flex items-center bg-slate-100 p-1 rounded-xl self-start sm:self-auto">
           <button
             onClick={() => setActiveTab('sessions')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'sessions'
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'sessions'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
             My Sessions ({bookings.length})
           </button>
           <button
             onClick={() => setActiveTab('payments_refunds')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'payments_refunds'
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'payments_refunds'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
-            }`}
+              }`}
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             <span>Payment &amp; Refund Ledger</span>
@@ -552,9 +550,8 @@ export default function ConsultationsPage() {
                       className="p-1 cursor-pointer"
                     >
                       <Star
-                        className={`w-6 h-6 ${
-                          star <= starRating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'
-                        }`}
+                        className={`w-6 h-6 ${star <= starRating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'
+                          }`}
                       />
                     </button>
                   ))}

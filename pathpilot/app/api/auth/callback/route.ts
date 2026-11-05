@@ -64,10 +64,12 @@ export async function GET(request: Request) {
 
         // Role-based target destination
         let target = next
-        if (target === '/onboarding' || target === '/dashboard') {
-          if (role === 'mentor') {
+        if (role === 'mentor') {
+          if (!target.startsWith('/mentor')) {
             target = user?.user_metadata?.mentor_status === 'pending_approval' ? '/mentor/profile' : '/mentor/dashboard'
-          } else {
+          }
+        } else {
+          if (target === '/onboarding' || target === '/dashboard') {
             target = '/student/dashboard'
           }
         }

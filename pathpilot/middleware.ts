@@ -86,15 +86,35 @@ export async function middleware(request: NextRequest) {
     !pathname.startsWith('/mentor/sign-in') &&
     !pathname.startsWith('/mentor/sign-up')
   
+  // All student-exclusive portal routes
+  const studentPortalPaths = [
+    '/dashboard',
+    '/student',
+    '/resume',
+    '/careers',
+    '/jobs',
+    '/roadmap',
+    '/prep-map',
+    '/mentors',
+    '/book',
+    '/consultations',
+    '/onboarding',
+    '/profile',
+  ]
+  const isStudentPortalRoute = studentPortalPaths.some((p) => pathname === p || pathname.startsWith(p + '/'))
+
   // Private student routes that require authentication
   const studentPrivatePaths = [
     '/dashboard',
-    '/student/dashboard',
+    '/student',
+    '/resume',
+    '/careers',
+    '/roadmap',
+    '/prep-map',
+    '/book',
     '/consultations',
-    '/student/bookings',
     '/onboarding',
     '/profile',
-    '/student/profile',
   ]
   const isPrivateStudentRoute = studentPrivatePaths.some((p) => pathname === p || pathname.startsWith(p + '/'))
 
@@ -127,22 +147,20 @@ export async function middleware(request: NextRequest) {
   if (isAuthenticated && !isSwitchingAccount) {
     // A: Prevent Student accounts from accessing Mentor portal
     if (role === 'student' && isMentorRoute) {
-      if (pathname.startsWith('/mentor/bookings')) {
-        return NextResponse.redirect(new URL('/consultations', request.url))
-      }
       const redirectUrl = new URL('/student/dashboard', request.url)
       redirectUrl.searchParams.set('notice', 'mentor_access_denied')
       return NextResponse.redirect(redirectUrl)
     }
 
-    // B: Prevent Mentor accounts from accessing private Student management portals
-    if (role === 'mentor' && isPrivateStudentRoute) {
+    // B: Prevent Mentor accounts from accessing ANY Student portal routes
+    if (role === 'mentor' && isStudentPortalRoute) {
       if (pathname === '/consultations' || pathname.startsWith('/consultations') || pathname.startsWith('/student/bookings')) {
         return NextResponse.redirect(new URL('/mentor/bookings', request.url))
       }
-      const redirectUrl = new URL('/mentor/dashboard', request.url)
-      redirectUrl.searchParams.set('notice', 'student_access_denied')
-      return NextResponse.redirect(redirectUrl)
+      if (pathname === '/profile' || pathname.startsWith('/student/profile')) {
+        return NextResponse.redirect(new URL('/mentor/profile', request.url))
+      }
+      return NextResponse.redirect(new URL('/mentor/dashboard', request.url))
     }
 
     // D: Redirect already authenticated users away from general Auth pages (unless switching portal)

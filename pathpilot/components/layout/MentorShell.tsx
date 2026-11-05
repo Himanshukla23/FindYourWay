@@ -62,6 +62,7 @@ export function MentorShell({ children, pageTitle }: MentorShellProps) {
           <Topbar
             onMenuClick={() => setSidebarOpen(true)}
             pageTitle={pageTitle || "Mentor Portal"}
+            isMentor={true}
           />
         </Suspense>
 

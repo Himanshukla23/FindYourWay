@@ -36,6 +36,11 @@ export function AppShell({
       if (supabase) {
         supabase.auth.getUser().then(({ data: { user } }) => {
           if (user) {
+            const role = user.user_metadata?.role
+            if (role === 'mentor') {
+              window.location.replace('/mentor/dashboard')
+              return
+            }
             const fullName =
               user.user_metadata?.full_name ||
               user.user_metadata?.name ||
