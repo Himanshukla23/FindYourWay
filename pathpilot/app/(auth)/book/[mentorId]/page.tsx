@@ -22,6 +22,8 @@ import {
 import { DEMO_MENTORS } from '@/lib/demo-data'
 import {
   getMentorSlots,
+  getMentorById,
+  Mentor,
   createBooking,
   AvailableSlot,
   BookingResponse,
@@ -35,7 +37,26 @@ function BookMentorContent() {
   const router = useRouter()
   const params = useParams()
   const mentorId = (params?.mentorId as string) || 'mentor-1'
-  const mentor = DEMO_MENTORS.find(m => m.id === mentorId) || DEMO_MENTORS[0]
+  const [mentor, setMentor] = useState<Mentor>(() => {
+    return DEMO_MENTORS.find(m => m.id === mentorId) || DEMO_MENTORS[0]
+  })
+
+  useEffect(() => {
+    async function loadMentorData() {
+      try {
+        const live = await getMentorById(mentorId)
+        if (live) {
+          setMentor(live)
+          if (live.mentoring_topics && live.mentoring_topics.length > 0) {
+            setSelectedTopic(live.mentoring_topics[0])
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load live mentor for booking:', err)
+      }
+    }
+    loadMentorData()
+  }, [mentorId])
 
   const [selectedTopic, setSelectedTopic] = useState<string>(
     mentor.mentoring_topics[0] || 'Resume Review & Career Strategy'

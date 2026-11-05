@@ -89,19 +89,19 @@ export default function MentorsPage() {
     }
   }, [searchQuery, sortBy])
 
-  // Extract all unique domains from mentors data
+  // Extract all unique domains dynamically from mentors data
   const availableDomains = useMemo(() => {
     const set = new Set<string>()
-    DEMO_MENTORS.forEach(m => m.domains.forEach(d => set.add(d)))
+    mentors.forEach(m => (m.domains || []).forEach(d => set.add(d)))
     return Array.from(set).sort()
-  }, [])
+  }, [mentors])
 
-  // Extract all unique mentoring topics
+  // Extract all unique mentoring topics dynamically from mentors data
   const availableTopics = useMemo(() => {
     const set = new Set<string>()
-    DEMO_MENTORS.forEach(m => (m.mentoring_topics || []).forEach(t => set.add(t)))
+    mentors.forEach(m => (m.mentoring_topics || []).forEach(t => set.add(t)))
     return Array.from(set).sort()
-  }, [])
+  }, [mentors])
 
   // Multi-facet filtering on the mentor list
   const filteredMentors = useMemo(() => {
@@ -518,11 +518,16 @@ export default function MentorsPage() {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1.5">
-                          <h3 className="text-sm font-bold text-slate-900 truncate flex items-center gap-1">
-                            {mentor.full_name}
+                          <h3 className="text-sm font-bold text-slate-900 truncate flex items-center gap-1.5">
+                            <span>{mentor.full_name}</span>
                             {mentor.is_verified && (
-                              <span title="Verified Industry Engineer">
-                                <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
+                              <span title="Verified Industry Practitioner">
+                                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                              </span>
+                            )}
+                            {!mentor.is_demo_profile && (
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#00F090] text-black tracking-wider uppercase shrink-0">
+                                NEW
                               </span>
                             )}
                           </h3>

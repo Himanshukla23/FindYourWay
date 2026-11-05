@@ -206,28 +206,6 @@ export const DEMO_JOB_PROFILES: JobProfile[] = [
 
 export const DEMO_MENTORS: MentorProfile[] = [
   {
-    id: 'mentor-himanshu',
-    user_id: null,
-    full_name: 'Himanshu',
-    title: 'Lead Software Engineer & Career Mentor',
-    organisation: 'PathPilot Engineering',
-    bio: 'Specializing in full-stack architecture, distributed backend services, and interview preparation. Dedicated to guiding students and engineers toward top-tier tech roles.',
-    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-    years_experience: 6,
-    domains: ['Software Engineering', 'Cloud & DevOps Architecture'],
-    skills: ['System Design', 'Python', 'React', 'Next.js', 'FastAPI', 'PostgreSQL'],
-    mentoring_topics: ['Resume Review & Project Critique', 'System Design Fundamentals', 'Mock Technical Interview', 'Full-Stack Career Roadmap'],
-    session_price_inr: 499,
-    session_duration_mins: [30, 60],
-    rating: 5.0,
-    review_count: 42,
-    is_verified: true,
-    is_demo_profile: false,
-    linkedin_url: 'https://linkedin.com',
-    is_available: true,
-    created_at: new Date().toISOString(),
-  },
-  {
     id: 'mentor-1',
     user_id: null,
     full_name: 'Aarav Sharma',

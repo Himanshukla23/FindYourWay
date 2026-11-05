@@ -9,6 +9,7 @@ import { FALLBACK_PM_JOBS } from './jobs-fallback'
 
 export interface Mentor {
   id: string
+  user_id?: string | null
   full_name: string
   title: string
   organisation: string
@@ -18,10 +19,15 @@ export interface Mentor {
   skills: string[]
   mentoring_topics: string[]
   session_price_inr: number
+  session_duration_mins?: number[]
   rating: number
   review_count: number
   is_verified: boolean
+  is_demo_profile?: boolean
+  is_available?: boolean
   years_experience: number
+  linkedin_url?: string | null
+  created_at?: string
 }
 
 export interface AvailableSlot {
@@ -193,21 +199,38 @@ function filterDemoMentors(params?: { domain?: string; search?: string; sort_by?
 }
 
 /**
- * Fetch mentors from Python backend, falling back to DEMO_MENTORS instantly
+ * Fetch mentors: queries Next.js Supabase API first so newly onboarded mentors appear live!
  */
 export async function getMentors(params?: {
   domain?: string
   search?: string
   sort_by?: string
 }): Promise<Mentor[]> {
+  const query = new URLSearchParams()
+  if (params?.domain && params.domain !== 'all') query.set('domain', params.domain)
+  if (params?.search) query.set('search', params.search)
+  if (params?.sort_by) query.set('sort_by', params.sort_by)
+  const qs = query.toString() ? '?' + query.toString() : ''
+
+  // 1. Try local Next.js API first (returns live database mentors + curated seed mentors)
+  try {
+    const res = await fetch(`/api/mentors${qs}`, { signal: AbortSignal.timeout(3500) })
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data.mentors) && data.mentors.length > 0) {
+        return data.mentors
+      }
+      if (Array.isArray(data) && data.length > 0) {
+        return data
+      }
+    }
+  } catch (localErr) {
+    // Fall through to external backend or demo data
+  }
+
   if (isBackendUsable()) {
     try {
-      const query = new URLSearchParams()
-      if (params?.domain && params.domain !== 'all') query.set('domain', params.domain)
-      if (params?.search) query.set('search', params.search)
-      if (params?.sort_by) query.set('sort_by', params.sort_by)
-
-      const url = `${BACKEND_URL}/api/mentors${query.toString() ? '?' + query.toString() : ''}`
+      const url = `${BACKEND_URL}/api/mentors${qs}`
       const res = await fetch(url, { signal: AbortSignal.timeout(1200) })
 
       if (res.ok) {
@@ -225,9 +248,20 @@ export async function getMentors(params?: {
 }
 
 /**
- * Fetch single mentor
+ * Fetch single mentor by ID (supports real DB mentors and demo mentors)
  */
 export async function getMentorById(mentorId: string): Promise<Mentor | null> {
+  // 1. Try local Next.js API first
+  try {
+    const res = await fetch(`/api/mentors/${mentorId}`, { signal: AbortSignal.timeout(3500) })
+    if (res.ok) {
+      const data = await res.json()
+      if (data && data.id) return data
+    }
+  } catch (localErr) {
+    // Fall through
+  }
+
   if (isBackendUsable()) {
     try {
       const res = await fetch(`${BACKEND_URL}/api/mentors/${mentorId}`, {

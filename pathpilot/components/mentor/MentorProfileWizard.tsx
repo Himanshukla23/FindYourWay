@@ -27,7 +27,7 @@ import { MentorOnboardingFormData, MentorVerificationStatus } from '@/types'
 function LinkedinIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/>
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
     </svg>
   )
 }
@@ -188,7 +188,7 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
                     }
                   }
                 }
-              } catch {}
+              } catch { }
 
               setForm((prev) => ({
                 ...prev,
@@ -477,13 +477,12 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
                 setCurrentStep(s.n)
                 saveLocalDraft(form, s.n)
               }}
-              className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
-                currentStep === s.n
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : currentStep > s.n
+              className={`py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${currentStep === s.n
+                ? 'bg-blue-600 text-white shadow-xs'
+                : currentStep > s.n
                   ? 'bg-blue-50 text-blue-700'
                   : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
-              }`}
+                }`}
             >
               <span className="hidden sm:inline">{s.n}. </span>
               {s.label}
@@ -543,9 +542,8 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
                         setForm(updated)
                         saveLocalDraft(updated, currentStep)
                       }}
-                      className={`w-10 h-10 rounded-xl overflow-hidden border-2 transition-transform hover:scale-105 ${
-                        form.avatar_url === url ? 'border-blue-600 ring-2 ring-blue-200' : 'border-slate-200'
-                      }`}
+                      className={`w-10 h-10 rounded-xl overflow-hidden border-2 transition-transform hover:scale-105 ${form.avatar_url === url ? 'border-blue-600 ring-2 ring-blue-200' : 'border-slate-200'
+                        }`}
                     >
                       <img src={url} alt={`Avatar option ${i + 1}`} className="w-full h-full object-cover" />
                     </button>
@@ -857,11 +855,10 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
                     setForm(updated)
                     saveLocalDraft(updated, currentStep)
                   }}
-                  className={`p-3 rounded-xl border text-left text-xs font-bold transition-all ${
-                    form.primary_domain === domain
-                      ? 'bg-blue-50 border-blue-600 text-blue-900 ring-1 ring-blue-500'
-                      : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
+                  className={`p-3 rounded-xl border text-left text-xs font-bold transition-all ${form.primary_domain === domain
+                    ? 'bg-blue-50 border-blue-600 text-blue-900 ring-1 ring-blue-500'
+                    : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
                 >
                   {domain}
                 </button>
@@ -882,11 +879,10 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
                     key={role}
                     type="button"
                     onClick={() => toggleArrayItem('target_roles', role)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                      active
-                        ? 'bg-indigo-600 border-indigo-600 text-white'
-                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                    }`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${active
+                      ? 'bg-indigo-600 border-indigo-600 text-white'
+                      : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                      }`}
                   >
                     {active ? '✓ ' : '+ '}
                     {role}
@@ -909,11 +905,10 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
                     key={topic}
                     type="button"
                     onClick={() => toggleArrayItem('mentoring_topics', topic)}
-                    className={`p-2.5 rounded-xl border text-left text-xs font-semibold flex items-center justify-between transition-all ${
-                      active
-                        ? 'bg-blue-50 border-blue-500 text-blue-900'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
+                    className={`p-2.5 rounded-xl border text-left text-xs font-semibold flex items-center justify-between transition-all ${active
+                      ? 'bg-blue-50 border-blue-500 text-blue-900'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
                   >
                     <span>{topic}</span>
                     {active && <Check className="w-4 h-4 text-blue-600 shrink-0" />}
@@ -981,11 +976,10 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
                         toggleArrayItem('skills', s)
                       }
                     }}
-                    className={`px-2 py-0.5 rounded text-[11px] border transition-colors ${
-                      form.skills.includes(s)
-                        ? 'bg-blue-100 text-blue-700 border-blue-200'
-                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                    }`}
+                    className={`px-2 py-0.5 rounded text-[11px] border transition-colors ${form.skills.includes(s)
+                      ? 'bg-blue-100 text-blue-700 border-blue-200'
+                      : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                      }`}
                   >
                     + {s}
                   </button>
@@ -1007,11 +1001,10 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
                     key={lang}
                     type="button"
                     onClick={() => toggleArrayItem('languages', lang)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                      active
-                        ? 'bg-emerald-600 border-emerald-600 text-white'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${active
+                      ? 'bg-emerald-600 border-emerald-600 text-white'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
                   >
                     {active ? '✓ ' : '+ '}
                     {lang}
@@ -1028,9 +1021,8 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
                 Professional Biography <span className="text-rose-500">*</span>
               </label>
               <span
-                className={`text-xs ${
-                  form.bio.length < 50 ? 'text-amber-600' : 'text-slate-400'
-                }`}
+                className={`text-xs ${form.bio.length < 50 ? 'text-amber-600' : 'text-slate-400'
+                  }`}
               >
                 {form.bio.length} / 50 min chars
               </span>
@@ -1076,11 +1068,10 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
                     key={dur}
                     type="button"
                     onClick={() => toggleDuration(dur)}
-                    className={`py-3 px-4 rounded-xl border text-center font-bold text-sm transition-all ${
-                      active
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
+                    className={`py-3 px-4 rounded-xl border text-center font-bold text-sm transition-all ${active
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
                   >
                     {dur} Minutes
                   </button>
@@ -1167,11 +1158,10 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
                     key={aud}
                     type="button"
                     onClick={() => toggleArrayItem('target_audience', aud)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                      active
-                        ? 'bg-blue-600 border-blue-600 text-white'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${active
+                      ? 'bg-blue-600 border-blue-600 text-white'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
                   >
                     {active ? '✓ ' : '+ '}
                     {aud}
