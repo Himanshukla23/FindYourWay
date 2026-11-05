@@ -2,36 +2,37 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 /**
- * Middleware to protect authenticated routes.
- * Redirects unauthenticated users to /sign-in.
- * Redirects authenticated users away from auth pages to /dashboard.
- * Redirects new users who haven't completed onboarding to /onboarding.
- *
- * If Supabase is not configured (demo mode), middleware passes all requests through.
+ * Middleware to protect authenticated routes and strictly isolate
+ * Student and Mentor portals.
  */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // ── Fast-path: bypass API routes from middleware overhead ────────────────
-  if (pathname.startsWith('/api')) {
+  // 1. Fast-path: bypass API routes and static files
+  if (
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/_next') ||
+    pathname.includes('.')
+  ) {
     return NextResponse.next()
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // ── Demo mode: skip auth enforcement ──────────────────────────────────────
+  // Demo mode if Supabase not configured
   if (!supabaseUrl || !supabaseKey) {
     return NextResponse.next()
   }
 
   let supabaseResponse = NextResponse.next({ request })
 
+  // Initialize Supabase SSR client
+  let user = null
   const allCookies = request.cookies.getAll()
   const hasAuthCookie = allCookies.some((c) => c.name.startsWith('sb-') || c.name.includes('auth-token'))
   const hasDemoSession = request.cookies.get('pathpilot_demo_session')?.value === 'true'
 
-  let user = null
   if (hasAuthCookie) {
     try {
       const supabase = createServerClient(supabaseUrl, supabaseKey, {
@@ -49,12 +50,8 @@ export async function middleware(request: NextRequest) {
         },
       })
 
-      // Strict 1.5s timeout for auth resolution so pages never lag
-      const authResult: any = await Promise.race([
-        supabase.auth.getUser(),
-        new Promise((resolve) => setTimeout(() => resolve({ data: { user: null } }), 1500)),
-      ])
-      user = authResult?.data?.user || null
+      const { data } = await supabase.auth.getUser()
+      user = data?.user || null
     } catch {
       user = null
     }
@@ -62,129 +59,107 @@ export async function middleware(request: NextRequest) {
 
   const isAuthenticated = !!user || hasDemoSession
 
-  // ── Role & Verification Status Resolution ─────────────────────────────────
-  // The authenticated user's metadata role is the absolute source of truth
+  // Role resolution: database user metadata first, cookie second, default student
   const userMetadataRole = user?.user_metadata?.role as 'student' | 'mentor' | undefined
   const cookieRole = request.cookies.get('pathpilot_user_role')?.value as 'student' | 'mentor' | undefined
   const role = userMetadataRole || cookieRole || 'student'
-  const mentorStatus = user?.user_metadata?.mentor_status || 'approved'
   const isOnboarded = request.cookies.get('pathpilot_onboarded')?.value === 'true' ||
     user?.user_metadata?.onboarding_completed === true
 
-  // ── Convenience redirects for base portal paths ─────────────────────────
+  // Helper to carry over cookies on redirect to prevent session loss
+  const createRedirect = (url: string | URL) => {
+    const targetUrl = url instanceof URL ? url : new URL(url, request.url)
+    const redirectResponse = NextResponse.redirect(targetUrl)
+    supabaseResponse.cookies.getAll().forEach((c) => {
+      redirectResponse.cookies.set(c.name, c.value)
+    })
+    return redirectResponse
+  }
+
+  // Base path convenience shortcuts
   if (pathname === '/mentor') {
-    return NextResponse.redirect(new URL('/mentor/dashboard', request.url))
+    return createRedirect('/mentor/dashboard')
   }
   if (pathname === '/student') {
-    return NextResponse.redirect(new URL('/student/dashboard', request.url))
+    return createRedirect('/dashboard')
   }
 
-  // ── Route Categorization ──────────────────────────────────────────────────
-  // Private mentor portal routes: strictly match /mentor or /mentor/* (never match /mentors public directory)
-  const isMentorRoute =
-    (pathname === '/mentor' || pathname.startsWith('/mentor/')) &&
-    !pathname.startsWith('/mentor/sign-in') &&
-    !pathname.startsWith('/mentor/sign-up')
-  
-  // All student-exclusive portal routes
-  const studentPortalPaths = [
-    '/dashboard',
-    '/student',
-    '/resume',
-    '/careers',
-    '/jobs',
-    '/roadmap',
-    '/prep-map',
-    '/mentors',
-    '/book',
-    '/consultations',
-    '/onboarding',
-    '/profile',
-  ]
-  const isStudentPortalRoute = studentPortalPaths.some((p) => pathname === p || pathname.startsWith(p + '/'))
+  // Route definitions
+  const isMentorRoute = pathname === '/mentor' || pathname.startsWith('/mentor/')
+  const isMentorAuthPage = pathname === '/mentor/sign-in' || pathname === '/mentor/sign-up'
+  const isStudentAuthPage = pathname === '/sign-in' || pathname === '/sign-up' || pathname === '/student/sign-in' || pathname === '/student/sign-up'
+  const isAuthPage = isMentorAuthPage || isStudentAuthPage
+  const isSwitchingAccount = request.nextUrl.searchParams.get('switch') === 'true'
 
-  // Private student routes that require authentication
+  // Student private management routes that require authentication
   const studentPrivatePaths = [
     '/dashboard',
-    '/student',
+    '/student/dashboard',
     '/resume',
-    '/careers',
     '/roadmap',
     '/prep-map',
-    '/book',
     '/consultations',
     '/onboarding',
     '/profile',
   ]
-  const isPrivateStudentRoute = studentPrivatePaths.some((p) => pathname === p || pathname.startsWith(p + '/'))
-
-  const authPaths = [
-    '/sign-in',
-    '/sign-up',
-    '/student/sign-in',
-    '/student/sign-up',
-    '/mentor/sign-in',
-    '/mentor/sign-up',
-  ]
-  const isAuthPage = authPaths.some((p) => pathname === p || pathname.startsWith(p + '/'))
-  const isSwitchingAccount = request.nextUrl.searchParams.get('switch') === 'true'
+  const isStudentPrivateRoute = studentPrivatePaths.some((p) => pathname === p || pathname.startsWith(p + '/'))
 
   // ── 1. Unauthenticated Route Protection ───────────────────────────────────
   if (!isAuthenticated) {
-    if (isMentorRoute) {
+    if (isMentorRoute && !isMentorAuthPage) {
       const redirectUrl = new URL('/mentor/sign-in', request.url)
       redirectUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(redirectUrl)
+      return createRedirect(redirectUrl)
     }
-    if (isPrivateStudentRoute) {
+    if (isStudentPrivateRoute) {
       const redirectUrl = new URL('/student/sign-in', request.url)
       redirectUrl.searchParams.set('redirect', pathname)
-      return NextResponse.redirect(redirectUrl)
+      return createRedirect(redirectUrl)
     }
+    return supabaseResponse
   }
 
-  // ── 2. Authenticated Role-Based Cross-Portal Protection ───────────────────
-  if (isAuthenticated && !isSwitchingAccount) {
-    // A: Prevent Student accounts from accessing Mentor portal
-    if (role === 'student' && isMentorRoute) {
-      const redirectUrl = new URL('/student/dashboard', request.url)
-      redirectUrl.searchParams.set('notice', 'mentor_access_denied')
-      return NextResponse.redirect(redirectUrl)
+  // ── 2. Authenticated Routing & Role Isolation ─────────────────────────────
+  // If already authenticated and visiting an auth page (sign-in/sign-up), redirect to dashboard
+  if (isAuthPage && !!user && !isSwitchingAccount) {
+    // Allow mentors to view student sign-in if switching intentionally
+    if (pathname.includes('student') && role === 'mentor' && isSwitchingAccount) {
+      return supabaseResponse
     }
+    if (pathname.includes('mentor') && role === 'student' && isSwitchingAccount) {
+      return supabaseResponse
+    }
+    const dest = role === 'mentor' ? '/mentor/dashboard' : (isOnboarded ? '/dashboard' : '/onboarding')
+    return createRedirect(dest)
+  }
 
-    // B: Prevent Mentor accounts from accessing ANY Student portal routes
-    if (role === 'mentor' && isStudentPortalRoute) {
-      if (pathname === '/consultations' || pathname.startsWith('/consultations') || pathname.startsWith('/student/bookings')) {
-        return NextResponse.redirect(new URL('/mentor/bookings', request.url))
+  // A. Mentor Role Protection:
+  if (role === 'mentor') {
+    // If a mentor tries to access private student management portals, redirect to mentor portal
+    if (isStudentPrivateRoute) {
+      if (pathname === '/consultations' || pathname.startsWith('/consultations')) {
+        return createRedirect('/mentor/bookings')
       }
-      if (pathname === '/profile' || pathname.startsWith('/student/profile')) {
-        return NextResponse.redirect(new URL('/mentor/profile', request.url))
-      }
-      return NextResponse.redirect(new URL('/mentor/dashboard', request.url))
+      return createRedirect('/mentor/dashboard')
     }
+    // Allow all mentor routes and public browsing (/mentors, /jobs, /careers, /)
+    return supabaseResponse
+  }
 
-    // D: Redirect already authenticated users away from general Auth pages (unless switching portal)
-    if (isAuthPage && !!user) {
-      // Allow mentors to view student sign in if they intend to switch
-      if (pathname.includes('student') && role === 'mentor') {
-        return supabaseResponse
-      }
-      if (pathname.includes('mentor') && role === 'student') {
-        return supabaseResponse
-      }
-      const dest = role === 'mentor' ? '/mentor/dashboard' : (isOnboarded ? '/student/dashboard' : '/onboarding')
-      return NextResponse.redirect(new URL(dest, request.url))
+  // B. Student Role Protection:
+  if (role === 'student') {
+    // Prevent students from accessing private mentor portal
+    if (isMentorRoute && !isMentorAuthPage) {
+      return createRedirect('/dashboard')
     }
-
-    // E: If student is not onboarded and tries to access private student dashboard
-    if (role === 'student' && !isOnboarded && isPrivateStudentRoute && pathname !== '/onboarding') {
-      return NextResponse.redirect(new URL('/onboarding', request.url))
+    // Student onboarding check
+    if (!isOnboarded && isStudentPrivateRoute && pathname !== '/onboarding') {
+      return createRedirect('/onboarding')
     }
-
-    // F: If student is already onboarded and visits /onboarding, take directly to dashboard
-    if (role === 'student' && isOnboarded && pathname === '/onboarding') {
-      return NextResponse.redirect(new URL('/student/dashboard', request.url))
+    if (isOnboarded && pathname === '/onboarding') {
+      return createRedirect('/dashboard')
     }
+    return supabaseResponse
   }
 
   return supabaseResponse

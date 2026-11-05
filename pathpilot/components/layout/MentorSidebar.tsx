@@ -17,11 +17,11 @@ import { cn, getInitials } from '@/lib/utils'
 import { clearClientSessionData } from '@/lib/auth-session'
 
 const mentorNavItems = [
-  { href: '/mentor/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
-  { href: '/mentor/profile',      label: 'My Profile',   icon: User },
+  { href: '/mentor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/mentor/profile', label: 'My Profile', icon: User },
   { href: '/mentor/availability', label: 'Availability', icon: Clock },
-  { href: '/mentor/bookings',     label: 'Bookings',     icon: Calendar },
-  { href: '/mentor/settings',     label: 'Settings',     icon: Settings },
+  { href: '/mentor/bookings', label: 'Bookings', icon: Calendar },
+  { href: '/mentor/settings', label: 'Settings', icon: Settings },
 ]
 
 interface MentorSidebarProps {
@@ -47,10 +47,10 @@ export function MentorSidebar({
 
   async function handleSignOut() {
     try {
-      await fetch('/api/auth/signout', { method: 'POST' }).catch(() => {})
+      await fetch('/api/auth/signout', { method: 'POST' }).catch(() => { })
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
-      if (supabase) await supabase.auth.signOut().catch(() => {})
+      if (supabase) await supabase.auth.signOut().catch(() => { })
     } catch (e) {
       console.error('Error signing out:', e)
     } finally {
