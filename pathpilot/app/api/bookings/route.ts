@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import { createGoogleMeetEvent } from '@/lib/google-calendar'
+import { sendBookingNotifications } from '@/lib/email-service'
 
 export async function GET(request: Request) {
   try {
@@ -165,6 +167,61 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+    // 1. Provision genuine Google Meet & Calendar Event
+    let startTimeIso = new Date().toISOString()
+    let endTimeIso = new Date(Date.now() + 1800000).toISOString()
+    try {
+      if (newBooking.date && newBooking.start_time) {
+        const dateStr = newBooking.date.includes('T') ? newBooking.date.split('T')[0] : newBooking.date
+        const timeStr = newBooking.start_time.length === 5 ? `${newBooking.start_time}:00` : newBooking.start_time
+        const startDt = new Date(`${dateStr}T${timeStr}`)
+        if (!isNaN(startDt.getTime())) {
+          startTimeIso = startDt.toISOString()
+          const durationMs = (newBooking.duration_minutes || newBooking.duration_mins || 30) * 60000
+          endTimeIso = new Date(startDt.getTime() + durationMs).toISOString()
+        }
+      }
+    } catch {}
+
+    const calResult = await createGoogleMeetEvent({
+      summary: `PathPilot 1:1 Mentorship: ${newBooking.topic || 'Consultation'}`,
+      description: `1-on-1 Mentorship Session\nMentor: ${newBooking.mentor_name}\nStudent: ${newBooking.user_name || newBooking.student_name}\nTopic: ${newBooking.topic}\nNotes: ${newBooking.notes || 'None'}`,
+      startTime: startTimeIso,
+      endTime: endTimeIso,
+      timeZone: newBooking.time_zone || 'Asia/Kolkata',
+      studentEmail: newBooking.student_email || newBooking.user_email,
+      mentorEmail: newBooking.mentor_email,
+      bookingId: newBooking.id,
+    })
+
+    if (calResult.meetLink) {
+      newBooking.meet_link = calResult.meetLink
+      newBooking.meeting_link = calResult.meetLink
+    }
+    if (calResult.htmlLink) {
+      newBooking.calendar_link = calResult.htmlLink
+    }
+
+    // 2. Dispatch email notifications asynchronously (non-blocking)
+    sendBookingNotifications({
+      bookingId: newBooking.id,
+      mentorName: newBooking.mentor_name,
+      mentorTitle: newBooking.mentor_title,
+      mentorOrg: newBooking.mentor_org,
+      mentorEmail: newBooking.mentor_email || '',
+      studentName: newBooking.user_name || newBooking.student_name || 'Student',
+      studentEmail: newBooking.student_email || newBooking.user_email || 'student@pathpilot.ai',
+      date: newBooking.date,
+      startTime: newBooking.start_time,
+      durationMinutes: newBooking.duration_minutes || newBooking.duration_mins || 30,
+      topic: newBooking.topic,
+      notes: newBooking.notes,
+      meetLink: newBooking.meet_link,
+      calendarLink: calResult.htmlLink,
+    }).catch((emailErr) => {
+      console.warn('[API /api/bookings POST] Email dispatch warning:', emailErr)
+    })
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY

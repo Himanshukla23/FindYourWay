@@ -28,6 +28,11 @@ export default function MentorSettingsPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('calendar') === 'connected' || document.cookie.includes('pathpilot_google_calendar_connected=true')) {
+        setCalendarConnected(true)
+      }
+
       import('@/lib/supabase/client').then(({ createClient }) => {
         const supabase = createClient()
         if (supabase) {
@@ -35,6 +40,9 @@ export default function MentorSettingsPage() {
             if (user) {
               setMentorEmail(user.email || 'mentor@pathpilot.dev')
               setMentorName(user.user_metadata?.full_name || user.user_metadata?.name || 'Mentor')
+              if (user.user_metadata?.google_calendar_connected) {
+                setCalendarConnected(true)
+              }
             }
           })
         }
@@ -134,17 +142,34 @@ export default function MentorSettingsPage() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setCalendarConnected(prev => !prev)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-xs ${
-                calendarConnected
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
-              }`}
-            >
-              {calendarConnected ? '✓ Connected' : 'Connect Google'}
-            </button>
+            <div className="flex items-center gap-2">
+              {calendarConnected ? (
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Connected</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCalendarConnected(false)
+                      document.cookie = 'pathpilot_google_calendar_connected=; path=/; max-age=0'
+                    }}
+                    className="text-xs text-slate-400 hover:text-slate-600 underline font-medium"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              ) : (
+                <a
+                  href="/api/auth/google/calendar-connect"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition shadow-xs inline-flex items-center gap-1.5"
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  <span>Connect Google</span>
+                </a>
+              )}
+            </div>
           </div>
 
           <p className="text-xs text-slate-600 leading-relaxed">
@@ -152,7 +177,7 @@ export default function MentorSettingsPage() {
             <code className="text-indigo-600 font-mono bg-indigo-50 px-1 py-0.5 rounded">
               conferenceDataVersion=1
             </code>{' '}
-            automatically provisions a Google Meet room and invites both participants with automated reminders.
+            automatically provisions an official Google Meet room, sends instant calendar invites with notification alarms to both participants, and emails the student preparation agenda.
           </p>
         </div>
 

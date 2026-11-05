@@ -128,11 +128,18 @@ export async function GET(request: Request) {
       })
     }
 
-    return NextResponse.json({
-      success: true,
-      total: allMentors.length,
-      mentors: allMentors,
-    })
+    return NextResponse.json(
+      {
+        success: true,
+        total: allMentors.length,
+        mentors: allMentors,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',
+        },
+      }
+    )
   } catch (err: any) {
     console.error('[API /api/mentors GET] Error:', err)
     return NextResponse.json(

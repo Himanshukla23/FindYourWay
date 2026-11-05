@@ -53,7 +53,11 @@ export async function GET(
             created_at: r.created_at || new Date().toISOString(),
           }
 
-          return NextResponse.json(mentor)
+          return NextResponse.json(mentor, {
+            headers: {
+              'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+            },
+          })
         }
       } catch (dbErr) {
         console.warn('[API /api/mentors/[id]] DB query warning:', dbErr)
