@@ -37,30 +37,37 @@ function BookMentorContent() {
   const router = useRouter()
   const params = useParams()
   const mentorId = (params?.mentorId as string) || 'mentor-1'
-  const [mentor, setMentor] = useState<Mentor>(() => {
-    return DEMO_MENTORS.find(m => m.id === mentorId) || DEMO_MENTORS[0]
-  })
+  // Load real mentor from DB, fallback to demo while loading
+  const [mentor, setMentor] = useState<Mentor>(() => DEMO_MENTORS.find(m => m.id === mentorId) || DEMO_MENTORS[0])
+  const [mentorLoading, setMentorLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true
     async function loadMentorData() {
+      setMentorLoading(true)
       try {
         const live = await getMentorById(mentorId)
-        if (live) {
+        if (live && mounted) {
           setMentor(live)
           if (live.mentoring_topics && live.mentoring_topics.length > 0) {
             setSelectedTopic(live.mentoring_topics[0])
           }
+        } else if (!live && mounted) {
+          // Keep demo fallback
+          const demo = DEMO_MENTORS.find(m => m.id === mentorId) || DEMO_MENTORS[0]
+          setMentor(demo)
         }
       } catch (err) {
         console.warn('Failed to load live mentor for booking:', err)
+      } finally {
+        if (mounted) setMentorLoading(false)
       }
     }
     loadMentorData()
+    return () => { mounted = false }
   }, [mentorId])
 
-  const [selectedTopic, setSelectedTopic] = useState<string>(
-    mentor.mentoring_topics[0] || 'Resume Review & Career Strategy'
-  )
+  const [selectedTopic, setSelectedTopic] = useState<string>('Resume Review & Career Strategy')
   const [sessionDuration, setSessionDuration] = useState<number>(30)
   const [slots, setSlots] = useState<AvailableSlot[]>([])
   const [selectedSlotId, setSelectedSlotId] = useState<string>('')

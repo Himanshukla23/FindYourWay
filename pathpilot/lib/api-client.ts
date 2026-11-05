@@ -325,7 +325,7 @@ export async function getMentorSlots(mentorId: string): Promise<AvailableSlot[]>
           if (parsed.weekly_schedule) schedule = parsed.weekly_schedule
           if (parsed.exceptions) exceptions = parsed.exceptions
           if (parsed.settings) settings = parsed.settings
-        } catch {}
+        } catch { }
       }
     }
 
@@ -455,9 +455,22 @@ export async function getBookings(userEmail?: string): Promise<BookingResponse[]
     if (res.ok) {
       const json = await res.json()
       if (Array.isArray(json)) return json
-      if (json?.bookings && Array.isArray(json.bookings)) return json.bookings
+      if (json?.bookings && Array.isArray(json.bookings) && json.bookings.length > 0) return json.bookings
+      // API returned empty — try email-scoped localStorage as a supplement
+      if (typeof window !== 'undefined') {
+        const knownKeys = Object.keys(localStorage).filter(k => k.startsWith('pathpilot_user_bookings_'))
+        for (const key of knownKeys) {
+          try {
+            const raw = localStorage.getItem(key)
+            if (raw) {
+              const parsed = JSON.parse(raw)
+              if (Array.isArray(parsed) && parsed.length > 0) return parsed
+            }
+          } catch { }
+        }
+      }
     }
-  } catch {}
+  } catch { }
 
   if (isBackendUsable()) {
     try {
@@ -473,6 +486,20 @@ export async function getBookings(userEmail?: string): Promise<BookingResponse[]
       }
     } catch {
       markBackendStatus(false)
+    }
+  }
+
+  // Final fallback: scan all email-scoped localStorage bookings
+  if (typeof window !== 'undefined') {
+    const knownKeys = Object.keys(localStorage).filter(k => k.startsWith('pathpilot_user_bookings_'))
+    for (const key of knownKeys) {
+      try {
+        const raw = localStorage.getItem(key)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        }
+      } catch { }
     }
   }
 
@@ -680,7 +707,7 @@ export async function getOnboardingProfile(): Promise<any | null> {
     if (raw) {
       try {
         return JSON.parse(raw)
-      } catch {}
+      } catch { }
     }
   }
 
@@ -698,7 +725,7 @@ export async function getOnboardingProfile(): Promise<any | null> {
         if (data) return data
       }
     }
-  } catch {}
+  } catch { }
 
   return null
 }
@@ -715,7 +742,7 @@ export function saveOnboardingDraft(step: number, draft: any) {
       'pathpilot_onboarding_draft',
       JSON.stringify({ step, draft, savedAt: new Date().toISOString() })
     )
-  } catch {}
+  } catch { }
 }
 
 /**
@@ -726,7 +753,7 @@ export function getOnboardingDraft(): { step: number; draft: any } | null {
   try {
     const raw = localStorage.getItem('pathpilot_onboarding_draft')
     if (raw) return JSON.parse(raw)
-  } catch {}
+  } catch { }
   return null
 }
 
@@ -835,9 +862,9 @@ export async function fetchJobs(params: JobQueryParams = {}): Promise<JobListRes
   }
   if (params.search) {
     const s = params.search.toLowerCase()
-    filtered = filtered.filter(j => 
-      j.title.toLowerCase().includes(s) || 
-      j.company.toLowerCase().includes(s) || 
+    filtered = filtered.filter(j =>
+      j.title.toLowerCase().includes(s) ||
+      j.company.toLowerCase().includes(s) ||
       (j.skills && j.skills.some(sk => sk.toLowerCase().includes(s)))
     )
   }
@@ -857,7 +884,7 @@ export async function fetchJobs(params: JobQueryParams = {}): Promise<JobListRes
 
 export async function fetchJobById(jobId: string, userEmail?: string): Promise<JobListing | null> {
   try {
-    const url = userEmail 
+    const url = userEmail
       ? `${BACKEND_URL}/api/jobs/${jobId}?user_email=${encodeURIComponent(userEmail)}`
       : `${BACKEND_URL}/api/jobs/${jobId}`
     const res = await fetch(url)
@@ -883,7 +910,7 @@ export async function syncJobsEngine(): Promise<boolean> {
 export async function toggleSaveJob(jobId: string, userEmail: string, save: boolean): Promise<boolean> {
   try {
     const method = save ? 'POST' : 'DELETE'
-    const url = save 
+    const url = save
       ? `${BACKEND_URL}/api/jobs/${jobId}/save`
       : `${BACKEND_URL}/api/jobs/${jobId}/save?user_email=${encodeURIComponent(userEmail)}`
     const body = save ? JSON.stringify({ job_id: jobId, user_email: userEmail }) : undefined
@@ -917,9 +944,9 @@ export async function fetchUserSavedJobs(userEmail: string): Promise<JobListing[
 }
 
 export async function trackJobApplication(
-  jobId: string, 
-  userEmail: string, 
-  status: string = 'applied', 
+  jobId: string,
+  userEmail: string,
+  status: string = 'applied',
   notes: string = ''
 ): Promise<any> {
   try {

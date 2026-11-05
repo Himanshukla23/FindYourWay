@@ -3,8 +3,6 @@ import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { DEMO_MENTORS } from '@/lib/demo-data'
 import { Mentor } from '@/lib/api-client'
 
-export const dynamic = 'force-dynamic'
-
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }

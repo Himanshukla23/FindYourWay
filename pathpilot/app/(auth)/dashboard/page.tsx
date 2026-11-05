@@ -112,19 +112,61 @@ export default function DashboardPage() {
         }
       }
 
-      const storedBookings = localStorage.getItem('pathpilot_user_bookings')
-      if (storedBookings) {
-        try {
-          const parsedB = JSON.parse(storedBookings)
-          if (Array.isArray(parsedB)) setUpcomingBookings(parsedB)
-        } catch {}
-      } else {
-        getBookings()
-          .then((b) => {
-            if (b && b.length > 0) setUpcomingBookings(b)
-          })
-          .catch(() => {})
-      }
+      // Always fetch from API (which reads from Supabase DB for authenticated users)
+      // Also check email-scoped localStorage key as a local cache supplement
+      getBookings()
+        .then((b) => {
+          if (b && b.length > 0) {
+            setUpcomingBookings(b)
+          } else {
+            // Fallback: try to read from email-scoped localStorage key
+            try {
+              import('@/lib/supabase/client').then(({ createClient }) => {
+                const supabase = createClient()
+                if (supabase) {
+                  supabase.auth.getUser().then(({ data: { user } }) => {
+                    if (user?.email) {
+                      const emailKey = `pathpilot_user_bookings_${user.email}`
+                      const stored = localStorage.getItem(emailKey)
+                      if (stored) {
+                        try {
+                          const parsed = JSON.parse(stored)
+                          if (Array.isArray(parsed) && parsed.length > 0) {
+                            setUpcomingBookings(parsed)
+                          }
+                        } catch {}
+                      }
+                    }
+                  })
+                }
+              })
+            } catch {}
+          }
+        })
+        .catch(() => {
+          // On API failure, try email-scoped localStorage
+          try {
+            import('@/lib/supabase/client').then(({ createClient }) => {
+              const supabase = createClient()
+              if (supabase) {
+                supabase.auth.getUser().then(({ data: { user } }) => {
+                  if (user?.email) {
+                    const emailKey = `pathpilot_user_bookings_${user.email}`
+                    const stored = localStorage.getItem(emailKey)
+                    if (stored) {
+                      try {
+                        const parsed = JSON.parse(stored)
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                          setUpcomingBookings(parsed)
+                        }
+                      } catch {}
+                    }
+                  }
+                })
+              }
+            })
+          } catch {}
+        })
     } catch (e) {
       console.error('Error hydrating dashboard profile:', e)
     }

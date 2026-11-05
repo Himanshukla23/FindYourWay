@@ -36,9 +36,13 @@ export async function GET(request: Request) {
         const meta = user.user_metadata || {}
         const extra = (meta.mentor_profile_data as Record<string, any>) || {}
 
-        // Determine verification status: if DB row is verified or user_metadata says approved, default to approved
-        const isApproved = Boolean(dbProfile?.is_verified || meta.mentor_status === 'approved')
-        const verificationStatus = isApproved ? 'approved' : (meta.mentor_status || 'approved')
+        // Determine verification status:
+        // If DB row exists and is_verified is explicitly false, respect it.
+        // Otherwise default to approved (mentors are self-service, no admin gate).
+        const isApproved = dbProfile
+          ? Boolean(dbProfile.is_verified !== false)  // true unless explicitly set false
+          : true  // new mentors without DB row are auto-approved
+        const verificationStatus = isApproved ? 'approved' : 'pending_approval'
 
         if (dbProfile) {
           // Merge DB profile with user metadata for extended attributes

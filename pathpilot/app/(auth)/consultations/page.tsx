@@ -65,7 +65,26 @@ export default function ConsultationsPage() {
     setIsLoading(true)
     try {
       const data = await getBookings()
-      setBookings(data || [])
+      if (data && data.length > 0) {
+        setBookings(data)
+      } else {
+        // Fallback: scan all email-scoped localStorage bookings (in case DB is unavailable)
+        if (typeof window !== 'undefined') {
+          const knownKeys = Object.keys(localStorage).filter(k => k.startsWith('pathpilot_user_bookings_'))
+          for (const key of knownKeys) {
+            try {
+              const raw = localStorage.getItem(key)
+              if (raw) {
+                const parsed = JSON.parse(raw)
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  setBookings(parsed)
+                  break
+                }
+              }
+            } catch { }
+          }
+        }
+      }
     } catch (err) {
       console.error('Failed to load bookings:', err)
       setBookings([])
@@ -187,8 +206,8 @@ export default function ConsultationsPage() {
           <button
             onClick={() => setActiveTab('sessions')}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'sessions'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-white text-slate-900 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
               }`}
           >
             My Sessions ({bookings.length})
@@ -196,8 +215,8 @@ export default function ConsultationsPage() {
           <button
             onClick={() => setActiveTab('payments_refunds')}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === 'payments_refunds'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+              ? 'bg-white text-slate-900 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
               }`}
           >
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />

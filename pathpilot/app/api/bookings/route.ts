@@ -33,14 +33,48 @@ export async function GET(request: Request) {
         } else {
           query = query.eq('user_id', user.id)
         }
-        const { data: bookings } = await query.order('booking_date', { ascending: true })
+        const { data: bookings, error: dbError } = await query.order('booking_date', { ascending: true })
+
+        if (dbError) {
+          console.warn('[API /api/bookings GET] DB query warning:', dbError.message)
+        }
+
+        // If DB has bookings, return them. If empty (table may not exist yet, or no data),
+        // fall through to cookie-based bookings as a supplement.
+        if (bookings && bookings.length > 0) {
+          return NextResponse.json({
+            success: true,
+            total: bookings.length,
+            bookings: bookings,
+            isDemo: false,
+          })
+        }
+
+        // DB returned empty — try cookie-based bookings saved on booking page
+        const cookieRaw = cookieStore.get('pathpilot_user_bookings')?.value
+        let cookieBookings: any[] = []
+        if (cookieRaw) {
+          try { cookieBookings = JSON.parse(decodeURIComponent(cookieRaw)) } catch {}
+        }
+
+        // Filter cookie bookings to this user
+        if (Array.isArray(cookieBookings) && cookieBookings.length > 0 && targetEmail) {
+          const filtered = cookieBookings.filter(
+            (b: any) =>
+              b.user_email?.toLowerCase() === targetEmail.toLowerCase() ||
+              b.student_email?.toLowerCase() === targetEmail.toLowerCase()
+          )
+          if (filtered.length > 0) {
+            return NextResponse.json({ success: true, total: filtered.length, bookings: filtered, isDemo: false })
+          }
+        }
 
         // Strictly return this authenticated user's bookings (or [] if none exist)
-        // NEVER fall through to demo cookies or mock data for an authenticated user!
+        // NEVER return demo mock data for an authenticated user!
         return NextResponse.json({
           success: true,
-          total: (bookings || []).length,
-          bookings: bookings || [],
+          total: 0,
+          bookings: [],
           isDemo: false,
         })
       }
@@ -151,12 +185,13 @@ export async function POST(request: Request) {
 
       if (user) {
         // Upsert into Supabase bookings table
-        await supabase.from('bookings').upsert({
+        const { error: upsertError } = await supabase.from('bookings').upsert({
           id: newBooking.id,
           user_id: user.id,
           mentor_id: newBooking.mentor_id,
           mentor_name: newBooking.mentor_name,
           mentor_title: newBooking.mentor_title,
+          mentor_org: newBooking.mentor_org,
           user_name: newBooking.user_name || newBooking.student_name,
           user_email: newBooking.user_email || newBooking.student_email || user.email,
           student_email: newBooking.student_email || newBooking.user_email || user.email,
@@ -171,6 +206,9 @@ export async function POST(request: Request) {
           amount_inr: newBooking.amount_inr || 0,
           created_at: newBooking.created_at || new Date().toISOString(),
         })
+        if (upsertError) {
+          console.warn('[API /api/bookings POST] DB upsert warning:', upsertError.message)
+        }
 
         return NextResponse.json({
           success: true,

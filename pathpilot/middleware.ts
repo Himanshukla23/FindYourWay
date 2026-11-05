@@ -92,6 +92,7 @@ export async function middleware(request: NextRequest) {
   const isSwitchingAccount = request.nextUrl.searchParams.get('switch') === 'true'
 
   // Student private management routes that require authentication
+  // NOTE: /mentors and /jobs and /book are intentionally NOT here — they're public browsing
   const studentPrivatePaths = [
     '/dashboard',
     '/student/dashboard',
