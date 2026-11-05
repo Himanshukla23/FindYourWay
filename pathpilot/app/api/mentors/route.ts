@@ -60,13 +60,13 @@ export async function GET(request: Request) {
       }
     }
 
-    // Deduplicate DB mentors by name/user (in case developer registered multiple test accounts)
-    const seenNames = new Set<string>()
+    // Deduplicate DB mentors by user_id/id
+    const seenKeys = new Set<string>()
     const dedupedDbMentors: Mentor[] = []
     for (const m of dbMentors) {
-      const normalized = m.full_name.toLowerCase().trim()
-      if (!seenNames.has(normalized)) {
-        seenNames.add(normalized)
+      const key = m.user_id || m.id
+      if (key && !seenKeys.has(key)) {
+        seenKeys.add(key)
         dedupedDbMentors.push(m)
       }
     }

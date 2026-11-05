@@ -54,7 +54,7 @@ export async function GET(request: Request) {
           await supabase.auth.updateUser({
             data: {
               role: requestedRole,
-              mentor_status: requestedRole === 'mentor' ? 'pending_approval' : undefined,
+              mentor_status: requestedRole === 'mentor' ? 'approved' : undefined,
             },
           }).catch(() => {})
         }
@@ -66,7 +66,7 @@ export async function GET(request: Request) {
         let target = next
         if (role === 'mentor') {
           if (!target.startsWith('/mentor')) {
-            target = user?.user_metadata?.mentor_status === 'pending_approval' ? '/mentor/profile' : '/mentor/dashboard'
+            target = '/mentor/dashboard'
           }
         } else {
           if (target === '/onboarding' || target === '/dashboard') {

@@ -119,14 +119,7 @@ export default function MentorSignInPage() {
       // Valid mentor login
       document.cookie = 'pathpilot_user_role=mentor; path=/; max-age=2592000'
       localStorage.setItem('pathpilot_user_role', 'mentor')
-
-      // Check mentor approval status
-      const mentorStatus = user?.user_metadata?.mentor_status || 'approved'
-      if (mentorStatus === 'pending_approval') {
-        window.location.href = '/mentor/profile'
-      } else {
-        window.location.href = '/mentor/dashboard'
-      }
+      window.location.href = '/mentor/dashboard'
     } catch (err: any) {
       setError(err?.message || 'Something went wrong. Please try again.')
     } finally {

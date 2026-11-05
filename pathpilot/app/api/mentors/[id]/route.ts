@@ -16,12 +16,14 @@ export async function GET(
 
     if (client) {
       try {
-        // Query by id OR user_id
-        const { data: r, error } = await client
-          .from('mentor_profiles')
-          .select('*')
-          .or(`id.eq.${id},user_id.eq.${id}`)
-          .maybeSingle()
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+        let query = client.from('mentor_profiles').select('*')
+        if (isUUID) {
+          query = query.or(`id.eq.${id},user_id.eq.${id}`)
+        } else {
+          query = query.eq('id', id)
+        }
+        const { data: r, error } = await query.maybeSingle()
 
         if (r) {
           const mentor: Mentor = {

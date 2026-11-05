@@ -192,6 +192,7 @@ export async function POST(request: Request) {
           mentor_name: newBooking.mentor_name,
           mentor_title: newBooking.mentor_title,
           mentor_org: newBooking.mentor_org,
+          mentor_email: newBooking.mentor_email || null,
           user_name: newBooking.user_name || newBooking.student_name,
           user_email: newBooking.user_email || newBooking.student_email || user.email,
           student_email: newBooking.student_email || newBooking.user_email || user.email,

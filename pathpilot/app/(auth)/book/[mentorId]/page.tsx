@@ -242,6 +242,7 @@ function BookMentorContent() {
         mentor_name: mentor.full_name,
         mentor_title: mentor.title,
         mentor_org: mentor.organisation,
+        mentor_email: (mentor as any).email || undefined,
         user_name: bookingUserName,
         student_name: bookingUserName,
         user_email: bookingUserEmail || 'student@pathpilot.ai',

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Eye, EyeOff, Zap, ArrowRight, Loader2 } from 'lucide-react'
+import { clearClientSessionData } from '@/lib/auth-session'
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -77,10 +78,16 @@ export default function SignInPage() {
 
     setLoading(true)
 
+    clearClientSessionData()
+    setLoading(true)
+
     try {
       if (isDemoMode) {
         // Demo mode: simulate a successful sign-in
-        await new Promise((r) => setTimeout(r, 1000))
+        await new Promise((r) => setTimeout(r, 600))
+        document.cookie = 'pathpilot_demo_session=true; path=/; max-age=86400'
+        document.cookie = 'pathpilot_user_role=student; path=/; max-age=2592000'
+        localStorage.setItem('pathpilot_user_role', 'student')
         const isCompleted = document.cookie.includes('pathpilot_onboarded=true') ||
           localStorage.getItem('pathpilot_onboarding_completed') === 'true'
         window.location.href = isCompleted ? '/dashboard' : '/onboarding'
@@ -102,9 +109,18 @@ export default function SignInPage() {
       }
 
       const { data: { user } } = await supabase.auth.getUser()
-      const isCompleted = user?.user_metadata?.onboarding_completed === true ||
-        document.cookie.includes('pathpilot_onboarded=true') ||
-        localStorage.getItem('pathpilot_onboarding_completed') === 'true'
+      const role = user?.user_metadata?.role || 'student'
+
+      // Set explicit role cookie and localStorage
+      document.cookie = `pathpilot_user_role=${role}; path=/; max-age=2592000`
+      localStorage.setItem('pathpilot_user_role', role)
+
+      if (role === 'mentor') {
+        window.location.href = '/mentor/dashboard'
+        return
+      }
+
+      const isCompleted = user?.user_metadata?.onboarding_completed === true
       window.location.href = isCompleted ? '/dashboard' : '/onboarding'
     } catch (err) {
       setError('Something went wrong. Please try again.')

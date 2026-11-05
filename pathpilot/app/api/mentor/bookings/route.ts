@@ -29,19 +29,45 @@ export async function GET(request: Request) {
           .eq('user_id', user.id)
           .maybeSingle()
 
-        let query = supabase.from('bookings').select('*')
-        if (mentor?.id) {
-          query = query.or(`mentor_id.eq.${mentor.id},mentor_email.eq.${user.email}`)
-        } else {
-          query = query.eq('mentor_email', user.email)
+        const mentorIds = [user.id]
+        if (mentor?.id && mentor.id !== user.id) {
+          mentorIds.push(mentor.id)
         }
 
+        let query = supabase.from('bookings').select('*')
+        const filterStr = mentorIds.map(id => `mentor_id.eq.${id}`).join(',') +
+          (user.email ? `,mentor_email.eq.${user.email}` : '')
+        query = query.or(filterStr)
+
         const { data: bookings } = await query.order('booking_date', { ascending: true })
+
+        if (bookings && bookings.length > 0) {
+          return NextResponse.json({
+            success: true,
+            bookings: bookings,
+            isDemo: false,
+          })
+        }
+
+        // Check offline cookie fallback if DB returned empty
+        const demoBookingsCookie = cookieStore.get('pathpilot_user_bookings')?.value
+        let cookieBookings: any[] = []
+        if (demoBookingsCookie) {
+          try { cookieBookings = JSON.parse(decodeURIComponent(demoBookingsCookie)) } catch {}
+        }
+        if (Array.isArray(cookieBookings) && cookieBookings.length > 0) {
+          const matched = cookieBookings.filter((b: any) =>
+            mentorIds.includes(b.mentor_id) || (user.email && b.mentor_email === user.email)
+          )
+          if (matched.length > 0) {
+            return NextResponse.json({ success: true, bookings: matched, isDemo: false })
+          }
+        }
 
         // Strictly isolate authenticated user data; never expose other users' bookings
         return NextResponse.json({
           success: true,
-          bookings: bookings || [],
+          bookings: [],
           isDemo: false,
         })
       }

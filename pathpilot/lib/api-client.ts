@@ -10,6 +10,7 @@ import { FALLBACK_PM_JOBS } from './jobs-fallback'
 export interface Mentor {
   id: string
   user_id?: string | null
+  email?: string
   full_name: string
   title: string
   organisation: string
@@ -60,6 +61,7 @@ export interface BookingResponse {
   mentor_title: string
   mentor_org?: string
   mentor_organisation?: string
+  mentor_email?: string
   user_name?: string
   student_name?: string
   user_email?: string

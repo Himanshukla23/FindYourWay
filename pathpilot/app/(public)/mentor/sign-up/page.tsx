@@ -106,7 +106,7 @@ export default function MentorSignUpPage() {
           data: {
             full_name: form.fullName,
             role: 'mentor',
-            mentor_status: 'pending_approval',
+            mentor_status: 'approved',
             initial_job_title: form.jobTitle,
             initial_company: form.company,
           },

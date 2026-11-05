@@ -42,6 +42,23 @@ export function MentorShell({ children, pageTitle }: MentorShellProps) {
         })
       }
     })
+
+    // Also fetch latest live profile from server API to stay in sync
+    fetch('/api/mentor/profile')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.profile) {
+          const p = data.profile
+          setProfile((prev) => ({
+            ...prev,
+            name: p.full_name || prev.name,
+            email: p.email || prev.email,
+            title: p.title ? `${p.title}${p.organisation ? ` at ${p.organisation}` : ''}` : prev.title,
+            isApproved: Boolean(p.is_verified),
+          }))
+        }
+      })
+      .catch(() => {})
   }, [])
 
   return (
