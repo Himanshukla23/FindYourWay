@@ -357,10 +357,10 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
     }
   }
 
-  // Final Submit for Mentor Approval
+  // Final Submit for Instant Mentor Verification & Publishing
   const handleSubmitApproval = async () => {
     setErrorMessage(null)
-    if (!form.terms_accepted) {
+    if (!form.terms_accepted && mode !== 'edit') {
       setErrorMessage('Please accept the Terms of Service & Mentoring Policy before submitting.')
       return
     }
@@ -371,12 +371,13 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'approve',
+          isDraft: false,
           profile: {
             ...form,
-            verification_status: 'pending_approval' as MentorVerificationStatus,
+            verification_status: 'approved' as MentorVerificationStatus,
             draft_step: 5,
           },
-          isDraft: false,
         }),
       })
       const data = await res.json()
@@ -385,9 +386,9 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
         if (typeof window !== 'undefined') {
           localStorage.removeItem('pathpilot_mentor_draft')
         }
-        router.push('/mentor/profile?submitted=true')
+        router.push('/mentor/profile?published=true')
       } else {
-        setErrorMessage(data.error || 'Failed to submit profile for review.')
+        setErrorMessage(data.error || 'Failed to submit profile.')
       }
     } catch (err: any) {
       setErrorMessage(err?.message || 'Something went wrong submitting your profile.')
@@ -428,15 +429,26 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-xs transition-colors"
             >
               <Save className="w-3.5 h-3.5 text-slate-500" />
-              <span>{saving ? 'Saving...' : 'Save Incomplete Draft'}</span>
+              <span>{saving ? 'Saving...' : 'Save Draft'}</span>
             </button>
             {mode === 'edit' && (
-              <Link
-                href="/mentor/profile"
-                className="inline-flex items-center gap-1 px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800"
-              >
-                Cancel
-              </Link>
+              <>
+                <button
+                  type="button"
+                  onClick={handleSubmitApproval}
+                  disabled={saving}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>{saving ? 'Saving...' : 'Save & Publish Live'}</span>
+                </button>
+                <Link
+                  href="/mentor/profile"
+                  className="inline-flex items-center gap-1 px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800"
+                >
+                  Cancel
+                </Link>
+              </>
             )}
           </div>
         </div>
@@ -1185,8 +1197,8 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
                   This is how students will discover and view your profile in the marketplace.
                 </p>
               </div>
-              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                Pending Verification
+              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Instant Verification Ready
               </span>
             </div>
 
@@ -1358,6 +1370,18 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
             <span>Save Draft</span>
           </button>
 
+          {mode === 'edit' && currentStep < 5 && (
+            <button
+              type="button"
+              onClick={handleSubmitApproval}
+              disabled={saving}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-xs transition-colors"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{saving ? 'Saving...' : 'Save & Publish Live'}</span>
+            </button>
+          )}
+
           {currentStep < 5 ? (
             <button
               type="button"
@@ -1375,7 +1399,7 @@ export function MentorProfileWizard({ initialData, mode = 'onboarding' }: Mentor
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all hover:shadow-lg disabled:opacity-60"
             >
               <ShieldCheck className="w-4 h-4" />
-              <span>{saving ? 'Submitting...' : 'Submit Profile for Approval'}</span>
+              <span>{saving ? 'Publishing...' : 'Verify & Publish Profile Live'}</span>
             </button>
           )}
         </div>

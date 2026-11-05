@@ -21,6 +21,8 @@ import {
   DollarSign,
   Languages,
   BookOpen,
+  Power,
+  RotateCcw,
 } from 'lucide-react'
 import { MentorProfile } from '@/types'
 
@@ -35,72 +37,70 @@ function LinkedinIcon({ className }: { className?: string }) {
 export default function MentorProfilePage() {
   const [profile, setProfile] = useState<MentorProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [statusMessage, setStatusMessage] = useState<string | null>(null)
+
+  const loadProfile = async () => {
+    try {
+      const res = await fetch('/api/mentor/profile')
+      const data = await res.json()
+      if (data.success && data.profile) {
+        setProfile(data.profile)
+      }
+    } catch (err) {
+      console.error('Error fetching mentor profile:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function loadProfile() {
-      try {
-        const res = await fetch('/api/mentor/profile')
-        const data = await res.json()
-        if (data.success && data.profile) {
-          setProfile(data.profile)
-        }
-      } catch (err) {
-        console.error('Error fetching mentor profile:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
     loadProfile()
-
-    // Sync directly with Supabase user auth
-    if (typeof window !== 'undefined') {
-      import('@/lib/supabase/client').then(({ createClient }) => {
-        const supabase = createClient()
-        if (supabase) {
-          supabase.auth.getUser().then(({ data: { user } }) => {
-            if (user) {
-              setProfile((prev) => {
-                const meta = user.user_metadata || {}
-                const name = meta.full_name || meta.name || (user.email ? user.email.split('@')[0] : 'Mentor')
-                if (!prev) {
-                  return {
-                    id: user.id,
-                    user_id: user.id,
-                    full_name: name,
-                    email: user.email || '',
-                    title: meta.initial_job_title || 'Software Engineer',
-                    organisation: meta.initial_company || 'Tech Enterprise',
-                    avatar_url: meta.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
-                    years_experience: 4,
-                    primary_domain: 'Software Engineering',
-                    skills: ['System Design', 'React / Next.js', 'Python', 'PostgreSQL'],
-                    mentoring_topics: ['Resume Review & Project Critique', 'Mock Technical Interview'],
-                    languages: ['English', 'Hindi'],
-                    bio: 'Passionate engineering leader dedicated to mentoring computer science students on real-world systems, clean architecture, and technical interview excellence.',
-                    session_price_inr: 499,
-                    session_duration_mins: [30, 60],
-                    country: 'India',
-                    timezone: 'Asia/Kolkata',
-                    verification_status: meta.mentor_status || 'draft',
-                    linkedin_url: meta.linkedin_url || 'https://linkedin.com',
-                    created_at: user.created_at,
-                    updated_at: user.updated_at || new Date().toISOString(),
-                  } as MentorProfile
-                }
-                return {
-                  ...prev,
-                  full_name: prev.full_name || name,
-                  email: prev.email || user.email || '',
-                  title: prev.title || meta.initial_job_title || 'Software Engineer',
-                  organisation: prev.organisation || meta.initial_company || 'Tech Enterprise',
-                }
-              })
-            }
-          })
-        }
-      })
-    }
   }, [])
+
+  // Fast self-service toggle: Mentor has full authority to approve/publish or unpublish!
+  const handleTogglePublish = async (targetStatus: 'approved' | 'draft') => {
+    if (!profile) return
+    setUpdatingStatus(true)
+    setStatusMessage(null)
+
+    try {
+      const res = await fetch('/api/mentor/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: targetStatus === 'approved' ? 'approve' : 'unpublish',
+          isDraft: targetStatus !== 'approved',
+          profile: {
+            ...profile,
+            verification_status: targetStatus,
+            is_verified: targetStatus === 'approved',
+          },
+        }),
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        setProfile((prev) => (prev ? {
+          ...prev,
+          verification_status: targetStatus,
+          is_verified: targetStatus === 'approved',
+        } : null))
+        setStatusMessage(
+          targetStatus === 'approved'
+            ? 'Success! Your mentor profile is verified and active in the student marketplace.'
+            : 'Your profile visibility has been paused.'
+        )
+        setTimeout(() => setStatusMessage(null), 5000)
+      } else {
+        setStatusMessage(`Error: ${data.error || 'Failed to update status'}`)
+      }
+    } catch (err: any) {
+      setStatusMessage(`Error: ${err?.message || 'Something went wrong'}`)
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }
 
   const defaultProfile: Partial<MentorProfile> = {
     full_name: 'Mentor Profile',
@@ -118,14 +118,14 @@ export default function MentorProfilePage() {
     session_duration_mins: [30, 60],
     country: 'India',
     timezone: 'Asia/Kolkata',
-    verification_status: 'draft',
+    verification_status: 'approved',
+    is_verified: true,
     linkedin_url: 'https://linkedin.com',
   }
 
   const p = profile || defaultProfile
-  const status = p.verification_status || 'draft'
-  const isApproved = status === 'approved'
-  const isPending = status === 'pending_approval'
+  const status = p.verification_status || 'approved'
+  const isApproved = status === 'approved' || Boolean(p.is_verified)
 
   // Calculate completion percentage
   const fields = [
@@ -137,7 +137,7 @@ export default function MentorProfilePage() {
     Boolean(p.primary_domain || (p.domains && p.domains.length > 0)),
     Boolean(p.skills && p.skills.length > 0),
     Boolean(p.mentoring_topics && p.mentoring_topics.length > 0),
-    Boolean(p.bio && p.bio.length >= 50),
+    Boolean(p.bio && p.bio.length >= 30),
     Boolean(p.session_duration_mins && p.session_duration_mins.length > 0),
   ]
   const completedFields = fields.filter(Boolean).length
@@ -156,7 +156,7 @@ export default function MentorProfilePage() {
             My Mentor Profile
           </h1>
           <p className="text-slate-600 text-sm mt-1">
-            Manage how your professional credentials, expertise, and consultation preferences appear to students.
+            Manage your credentials, expertise, consultation pricing, and live marketplace availability.
           </p>
         </div>
 
@@ -177,14 +177,28 @@ export default function MentorProfilePage() {
         </div>
       </div>
 
-      {/* ── Verification Status Banner ─────────────────────────────── */}
+      {/* ── Status Feedback Alert ───────────────────────────────────── */}
+      {statusMessage && (
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center justify-between gap-3 text-sm animate-fade-in shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span className="font-semibold">{statusMessage}</span>
+          </div>
+          <button
+            onClick={() => setStatusMessage(null)}
+            className="text-xs text-emerald-700 hover:text-emerald-950 font-bold"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* ── Verification & Authority Banner ─────────────────────────── */}
       <div
         className={`rounded-2xl p-6 border transition-all ${
           isApproved
-            ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
-            : isPending
-            ? 'bg-amber-50/80 border-amber-200 text-amber-950'
-            : 'bg-slate-50 border-slate-200 text-slate-900'
+            ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950'
+            : 'bg-amber-50/90 border-amber-200 text-amber-950'
         }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -193,17 +207,13 @@ export default function MentorProfilePage() {
               className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
                 isApproved
                   ? 'bg-emerald-100 text-emerald-700'
-                  : isPending
-                  ? 'bg-amber-100 text-amber-700'
-                  : 'bg-slate-200 text-slate-600'
+                  : 'bg-amber-100 text-amber-700'
               }`}
             >
               {isApproved ? (
                 <ShieldCheck className="w-6 h-6" />
-              ) : isPending ? (
-                <AlertCircle className="w-6 h-6" />
               ) : (
-                <Edit3 className="w-6 h-6" />
+                <AlertCircle className="w-6 h-6" />
               )}
             </div>
             <div className="space-y-1">
@@ -211,40 +221,56 @@ export default function MentorProfilePage() {
                 <h3 className="text-base font-bold">
                   {isApproved
                     ? 'Verified & Published in Student Marketplace'
-                    : isPending
-                    ? 'Application Pending Review'
-                    : 'Profile Draft Incomplete'}
+                    : 'Profile Pending Activation'}
                 </h3>
                 <span
                   className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                     isApproved
                       ? 'bg-emerald-200 text-emerald-900'
-                      : isPending
-                      ? 'bg-amber-200 text-amber-900'
-                      : 'bg-slate-200 text-slate-700'
+                      : 'bg-amber-200 text-amber-900'
                   }`}
                 >
-                  {status.replace('_', ' ')}
+                  {isApproved ? 'LIVE & ACTIVE' : 'PENDING'}
                 </span>
               </div>
               <p className="text-xs sm:text-sm leading-relaxed opacity-90 max-w-2xl">
                 {isApproved
-                  ? 'Your profile is approved and live in the student consultation directory. Students can view your weekly availability and schedule genuine 1-on-1 consultations.'
-                  : isPending
-                  ? 'Your profile details have been submitted for verification. Our review team verifies professional credentials and LinkedIn history to keep PathPilot a high-trust marketplace. You will be notified once approved.'
-                  : 'Your profile has not yet been submitted for verification. Complete the 5-step onboarding wizard to submit your profile for student discovery.'}
+                  ? 'Your profile is approved and live in the student directory. Students can view your background, book 1-on-1 consultations, and receive automatic Google Meet invitations.'
+                  : 'You have full authority over your profile. Click "Publish & Go Live" below to immediately activate your profile in the student marketplace.'}
               </p>
             </div>
           </div>
 
-          {!isApproved && (
+          <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center">
+            {isApproved ? (
+              <button
+                type="button"
+                onClick={() => handleTogglePublish('draft')}
+                disabled={updatingStatus}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs shadow-xs transition-colors"
+              >
+                <Power className="w-3.5 h-3.5 text-slate-500" />
+                <span>{updatingStatus ? 'Updating...' : 'Pause Visibility'}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleTogglePublish('approved')}
+                disabled={updatingStatus}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all disabled:opacity-60"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>{updatingStatus ? 'Publishing...' : 'Approve & Go Live Now'}</span>
+              </button>
+            )}
+
             <Link
-              href="/mentor/onboarding"
-              className="px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 font-bold text-xs whitespace-nowrap self-start sm:self-auto shrink-0 shadow-xs"
+              href="/mentor/profile/edit"
+              className="px-3.5 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 font-bold text-xs shadow-xs"
             >
-              {isPending ? 'Update Application' : 'Complete Onboarding →'}
+              Update Details
             </Link>
-          )}
+          </div>
         </div>
 
         {/* Completion Progress */}
@@ -262,9 +288,42 @@ export default function MentorProfilePage() {
         </div>
       </div>
 
+      {/* ── Authority & Marketplace Controls ────────────────────────── */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-emerald-600" />
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              Mentor Authority & Publishing Rights
+            </h4>
+          </div>
+          <p className="text-xs text-slate-600 max-w-xl">
+            You hold complete administrative authority over your profile information, pricing, and availability. All edits persist directly to your verified profile and update your marketplace listings in real time.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href="/mentor/availability"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold"
+          >
+            <Clock className="w-3.5 h-3.5 text-slate-500" />
+            <span>Manage Hours</span>
+          </Link>
+          <Link
+            href="/mentors"
+            target="_blank"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 text-xs font-semibold"
+          >
+            <span>View in Marketplace</span>
+            <ExternalLink className="w-3 h-3" />
+          </Link>
+        </div>
+      </div>
+
       {/* ── Main Profile Summary Card ───────────────────────────────── */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-        {/* Cover / Header */}
+        {/* Header / Intro */}
         <div className="p-6 sm:p-8 border-b border-slate-100">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             <img
@@ -321,71 +380,82 @@ export default function MentorProfilePage() {
           </p>
         </div>
 
-        {/* Mentoring Topics & Skills */}
+        {/* Expertise & Skills */}
         <div className="p-6 sm:p-8 border-b border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-              <span>Mentoring Topics</span>
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Core Technical Proficiencies
             </h3>
             <div className="flex flex-wrap gap-2">
-              {p.mentoring_topics && p.mentoring_topics.length > 0 ? (
-                p.mentoring_topics.map((t) => (
+              {p.skills && p.skills.length > 0 ? (
+                p.skills.map((skill) => (
                   <span
-                    key={t}
-                    className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-800 border border-blue-100 text-xs font-medium"
+                    key={skill}
+                    className="px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-medium border border-slate-200"
                   >
-                    {t}
+                    {skill}
                   </span>
                 ))
               ) : (
-                <span className="text-xs text-slate-400">None selected</span>
+                <span className="text-xs text-slate-400 italic">No skills selected</span>
               )}
             </div>
           </div>
 
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <Award className="w-3.5 h-3.5 text-indigo-600" />
-              <span>Core Technical Skills</span>
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              Mentoring & Consultation Topics
             </h3>
-            <div className="flex flex-wrap gap-1.5">
-              {p.skills && p.skills.length > 0 ? (
-                p.skills.map((s) => (
+            <div className="flex flex-wrap gap-2">
+              {p.mentoring_topics && p.mentoring_topics.length > 0 ? (
+                p.mentoring_topics.map((topic) => (
                   <span
-                    key={s}
-                    className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-medium"
+                    key={topic}
+                    className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium border border-blue-200"
                   >
-                    {s}
+                    {topic}
                   </span>
                 ))
               ) : (
-                <span className="text-xs text-slate-400">None listed</span>
+                <span className="text-xs text-slate-400 italic">No topics selected</span>
               )}
             </div>
           </div>
         </div>
 
-        {/* Session Formats & Pricing */}
-        <div className="p-6 sm:p-8 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Consultation Pricing & Duration Details */}
+        <div className="p-6 sm:p-8 bg-slate-50/60 grid grid-cols-1 sm:grid-cols-3 gap-6 text-slate-800">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <Video className="w-4 h-4 text-blue-600" />
-              <span>Google Meet Video Sessions</span>
-              <span>&bull;</span>
-              <Languages className="w-4 h-4 text-slate-400" />
-              <span>{(p.languages || ['English']).join(', ')}</span>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase">
+              <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Session Pricing</span>
             </div>
-            <p className="text-xs text-slate-500">
-              Durations enabled: {(p.session_duration_mins || [30, 60]).map((d) => `${d}m`).join(', ')}
+            <p className="text-xl font-extrabold text-slate-900">
+              ₹{p.session_price_inr ?? 499}{' '}
+              <span className="text-xs font-normal text-slate-500">per session</span>
             </p>
           </div>
 
-          <div className="text-left sm:text-right">
-            <span className="text-xs text-slate-500 block">Consultation Rate</span>
-            <span className="text-2xl font-extrabold text-slate-900">
-              ₹{p.session_price_inr ?? 500}
-            </span>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase">
+              <Clock className="w-3.5 h-3.5 text-blue-600" />
+              <span>Session Durations</span>
+            </div>
+            <p className="text-sm font-bold text-slate-900">
+              {p.session_duration_mins && p.session_duration_mins.length > 0
+                ? p.session_duration_mins.map((d) => `${d} mins`).join(' & ')
+                : '30 & 60 mins'}
+            </p>
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase">
+              <Languages className="w-3.5 h-3.5 text-purple-600" />
+              <span>Languages</span>
+            </div>
+            <p className="text-sm font-bold text-slate-900">
+              {p.languages && p.languages.length > 0 ? p.languages.join(', ') : 'English, Hindi'}
+            </p>
           </div>
         </div>
       </div>

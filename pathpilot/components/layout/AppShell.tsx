@@ -66,7 +66,7 @@ export function AppShell({
       } else if (storedTarget) {
         setProfile((prev) => ({ ...prev, targetRole: storedTarget }))
       }
-    } catch {}
+    } catch { }
   }, [userName, userEmail, userAvatar])
 
   return (
