@@ -49,7 +49,7 @@ export default function SignUpPage() {
       const supabase = createClient()
       if (!supabase) throw new Error('Supabase not configured')
 
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
         options: {
@@ -59,7 +59,18 @@ export default function SignUpPage() {
       })
 
       if (signUpError) {
-        setError(signUpError.message)
+        if (signUpError.message?.toLowerCase().includes('rate limit')) {
+          setError('Supabase email limit exceeded. Please click "Sign up with Google" below for instant sign-up, or disable "Confirm email" in Supabase Dashboard.')
+        } else {
+          setError(signUpError.message)
+        }
+        return
+      }
+
+      if (signUpData?.session) {
+        document.cookie = 'pathpilot_user_role=student; path=/; max-age=2592000'
+        localStorage.setItem('pathpilot_user_role', 'student')
+        window.location.href = '/onboarding'
         return
       }
 

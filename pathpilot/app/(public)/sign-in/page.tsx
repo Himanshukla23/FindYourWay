@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Eye, EyeOff, Zap, ArrowRight, Loader2 } from 'lucide-react'
 import { clearClientSessionData } from '@/lib/auth-session'
+import { seedRecruiterDemoSession } from '@/lib/demo-session'
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -82,6 +83,21 @@ export default function SignInPage() {
     setLoading(true)
 
     try {
+      // ── Recruiter & Demo Bypass (Always Works Guaranteed) ──────────
+      const cleanEmail = form.email.trim().toLowerCase()
+      const isDemoEmail =
+        cleanEmail === 'recruiter@pathpilot.ai' ||
+        cleanEmail === 'demo@pathpilot.ai' ||
+        cleanEmail === 'student@demo.com' ||
+        cleanEmail === 'recruiter@demo.com'
+
+      if (isDemoEmail) {
+        await new Promise((r) => setTimeout(r, 350))
+        seedRecruiterDemoSession('student')
+        window.location.href = '/dashboard'
+        return
+      }
+
       if (isDemoMode) {
         // Demo mode: simulate a successful sign-in
         await new Promise((r) => setTimeout(r, 600))

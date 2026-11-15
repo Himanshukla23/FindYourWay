@@ -230,3 +230,4 @@ export async function sendBookingNotifications(
     provider: 'simulated',
   }
 }
+

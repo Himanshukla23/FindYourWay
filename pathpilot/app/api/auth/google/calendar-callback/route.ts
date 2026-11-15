@@ -32,7 +32,7 @@ export async function GET(request: Request) {
               google_calendar_connected: true,
               google_calendar_refresh_token: tokens.refresh_token,
             },
-          }).catch(() => {})
+          }).catch(() => { })
         }
       }
 

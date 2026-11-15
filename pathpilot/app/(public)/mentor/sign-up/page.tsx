@@ -99,7 +99,7 @@ export default function MentorSignUpPage() {
       if (!supabase) throw new Error('Supabase not configured')
 
       // Assign mentor role & pending approval status explicitly
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
         options: {
@@ -115,12 +115,22 @@ export default function MentorSignUpPage() {
       })
 
       if (signUpError) {
-        setError(signUpError.message)
+        if (signUpError.message?.toLowerCase().includes('rate limit')) {
+          setError('Supabase email limit exceeded. Please click "Sign up with Google" below for instant sign-up, or disable "Confirm email" in Supabase Dashboard.')
+        } else {
+          setError(signUpError.message)
+        }
         return
       }
 
       document.cookie = 'pathpilot_user_role=mentor; path=/; max-age=2592000'
       localStorage.setItem('pathpilot_user_role', 'mentor')
+
+      if (signUpData?.session) {
+        window.location.href = '/mentor/onboarding'
+        return
+      }
+
       setSuccess(true)
     } catch (err) {
       setError('Something went wrong. Please try again.')

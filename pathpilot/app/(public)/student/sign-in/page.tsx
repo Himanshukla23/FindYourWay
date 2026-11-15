@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Eye, EyeOff, GraduationCap, ArrowRight, Loader2, Sparkles, AlertCircle } from 'lucide-react'
 import { clearClientSessionData } from '@/lib/auth-session'
+import { seedRecruiterDemoSession } from '@/lib/demo-session'
 
 export default function StudentSignInPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -37,6 +38,21 @@ export default function StudentSignInPage() {
     setGoogleLoading(true)
     setError('')
     try {
+      // ── 1. Recruiter & Demo Bypass (Always Works Guaranteed) ──────────
+      const cleanEmail = form.email.trim().toLowerCase()
+      const isDemoEmail =
+        cleanEmail === 'recruiter@pathpilot.ai' ||
+        cleanEmail === 'demo@pathpilot.ai' ||
+        cleanEmail === 'student@demo.com' ||
+        cleanEmail === 'recruiter@demo.com'
+
+      if (isDemoEmail) {
+        await new Promise((r) => setTimeout(r, 350))
+        seedRecruiterDemoSession('student')
+        window.location.href = '/student/dashboard'
+        return
+      }
+
       if (isDemoMode) {
         document.cookie = 'pathpilot_demo_session=true; path=/; max-age=86400'
         document.cookie = 'pathpilot_user_role=student; path=/; max-age=2592000'
@@ -78,6 +94,21 @@ export default function StudentSignInPage() {
     setLoading(true)
 
     try {
+      // ── 1. Recruiter & Demo Bypass (Always Works Guaranteed) ──────────
+      const cleanEmail = form.email.trim().toLowerCase()
+      const isDemoEmail =
+        cleanEmail === 'recruiter@pathpilot.ai' ||
+        cleanEmail === 'demo@pathpilot.ai' ||
+        cleanEmail === 'student@demo.com' ||
+        cleanEmail === 'recruiter@demo.com'
+
+      if (isDemoEmail) {
+        await new Promise((r) => setTimeout(r, 350))
+        seedRecruiterDemoSession('student')
+        window.location.href = '/student/dashboard'
+        return
+      }
+
       if (isDemoMode) {
         await new Promise((r) => setTimeout(r, 600))
         document.cookie = 'pathpilot_demo_session=true; path=/; max-age=86400'

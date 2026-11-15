@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { Eye, EyeOff, Briefcase, ArrowRight, Loader2, ShieldCheck, AlertCircle } from 'lucide-react'
 import { clearClientSessionData } from '@/lib/auth-session'
+import { seedRecruiterDemoSession } from '@/lib/demo-session'
 
 export default function MentorSignInPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -37,6 +38,20 @@ export default function MentorSignInPage() {
     setGoogleLoading(true)
     setError('')
     try {
+      // ── Dedicated Mentor & Demo Bypass ─────────────────────────
+      const cleanEmail = form.email.trim().toLowerCase()
+      const isDemoEmail =
+        cleanEmail === 'mentor@pathpilot.ai' ||
+        cleanEmail === 'recruiter@pathpilot.ai' ||
+        cleanEmail === 'demo@pathpilot.ai'
+
+      if (isDemoEmail) {
+        await new Promise((r) => setTimeout(r, 350))
+        seedRecruiterDemoSession('mentor')
+        window.location.href = '/mentor/dashboard'
+        return
+      }
+
       if (isDemoMode) {
         document.cookie = 'pathpilot_demo_session=true; path=/; max-age=86400'
         document.cookie = 'pathpilot_user_role=mentor; path=/; max-age=2592000'
@@ -78,6 +93,20 @@ export default function MentorSignInPage() {
     setLoading(true)
 
     try {
+      // ── Dedicated Mentor & Demo Bypass ─────────────────────────
+      const cleanEmail = form.email.trim().toLowerCase()
+      const isDemoEmail =
+        cleanEmail === 'mentor@pathpilot.ai' ||
+        cleanEmail === 'recruiter@pathpilot.ai' ||
+        cleanEmail === 'demo@pathpilot.ai'
+
+      if (isDemoEmail) {
+        await new Promise((r) => setTimeout(r, 350))
+        seedRecruiterDemoSession('mentor')
+        window.location.href = '/mentor/dashboard'
+        return
+      }
+
       if (isDemoMode) {
         await new Promise((r) => setTimeout(r, 600))
         document.cookie = 'pathpilot_demo_session=true; path=/; max-age=86400'

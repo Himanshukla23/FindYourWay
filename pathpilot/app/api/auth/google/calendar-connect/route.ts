@@ -14,3 +14,4 @@ export async function GET(request: Request) {
   const authUrl = getGoogleCalendarAuthUrl(redirectUri, 'calendar_connect')
   return NextResponse.redirect(authUrl)
 }
+

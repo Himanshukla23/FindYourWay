@@ -70,7 +70,7 @@ export default function RoadmapPage() {
       const params = new URLSearchParams(window.location.search)
       const urlRole = params.get('role')
       const storedRole = localStorage.getItem('pathpilot_target_role')
-      
+
       if (urlRole && urlRole.trim()) {
         role = urlRole.trim()
       } else if (storedRole && storedRole.trim()) {
@@ -157,7 +157,7 @@ export default function RoadmapPage() {
         setEstimatedWeeks(data.estimatedWeeks || 8)
         setDifficulty(data.difficulty || 'Intermediate')
         setPrerequisites(data.prerequisites || ['Foundational Computer Science Concepts'])
-        
+
         const aiMetadata = {
           provider: json.providerUsed === 'gemini' ? 'Google Gemini' : json.providerUsed === 'groq' ? 'Groq Llama-3.3' : 'PathPilot Curriculum Engine',
           model: json.model || 'gemini-flash-latest'
@@ -385,25 +385,22 @@ export default function RoadmapPage() {
         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold self-start sm:self-auto">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-              activeFilter === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${activeFilter === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
           >
             All ({tasks.length})
           </button>
           <button
             onClick={() => setActiveFilter('pending')}
-            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-              activeFilter === 'pending' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${activeFilter === 'pending' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
           >
             In Progress ({tasks.length - completedCount})
           </button>
           <button
             onClick={() => setActiveFilter('completed')}
-            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-              activeFilter === 'completed' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${activeFilter === 'completed' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
           >
             Completed ({completedCount})
           </button>
@@ -439,21 +436,19 @@ export default function RoadmapPage() {
               return (
                 <div
                   key={task.id}
-                  className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
-                    task.completed
-                      ? 'bg-slate-50/70 border-slate-200'
-                      : 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-sm shadow-xs'
-                  }`}
+                  className={`rounded-2xl border transition-all duration-200 overflow-hidden ${task.completed
+                    ? 'bg-slate-50/70 border-slate-200'
+                    : 'bg-white border-slate-200 hover:border-blue-400 hover:shadow-sm shadow-xs'
+                    }`}
                 >
                   <div className="p-5 flex items-start gap-4">
                     {/* Toggle Completion */}
                     <button
                       onClick={() => toggleTask(task.id)}
-                      className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all cursor-pointer ${
-                        task.completed
-                          ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
-                          : 'border-slate-300 bg-white hover:border-blue-500 hover:bg-blue-50/30'
-                      }`}
+                      className={`mt-0.5 w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all cursor-pointer ${task.completed
+                        ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
+                        : 'border-slate-300 bg-white hover:border-blue-500 hover:bg-blue-50/30'
+                        }`}
                       aria-label="Toggle completion status"
                     >
                       {task.completed ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4 text-slate-400" />}
@@ -582,7 +577,7 @@ export default function RoadmapPage() {
       {capstone && (
         <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-          
+
           <div className="relative z-10 space-y-4">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-xs font-semibold text-blue-300 uppercase tracking-wider">
               <Award className="w-3.5 h-3.5 text-blue-400" />
