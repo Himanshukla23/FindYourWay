@@ -38,21 +38,6 @@ export default function StudentSignInPage() {
     setGoogleLoading(true)
     setError('')
     try {
-      // ── 1. Recruiter & Demo Bypass (Always Works Guaranteed) ──────────
-      const cleanEmail = form.email.trim().toLowerCase()
-      const isDemoEmail =
-        cleanEmail === 'recruiter@pathpilot.ai' ||
-        cleanEmail === 'demo@pathpilot.ai' ||
-        cleanEmail === 'student@demo.com' ||
-        cleanEmail === 'recruiter@demo.com'
-
-      if (isDemoEmail) {
-        await new Promise((r) => setTimeout(r, 350))
-        seedRecruiterDemoSession('student')
-        window.location.href = '/student/dashboard'
-        return
-      }
-
       if (isDemoMode) {
         document.cookie = 'pathpilot_demo_session=true; path=/; max-age=86400'
         document.cookie = 'pathpilot_user_role=student; path=/; max-age=2592000'
@@ -94,19 +79,19 @@ export default function StudentSignInPage() {
     setLoading(true)
 
     try {
-      // ── 1. Recruiter & Demo Bypass (Always Works Guaranteed) ──────────
+      // ── Strict Recruiter Access (ONLY recruiter@pathpilot.ai and ONLY Demo@1234) ──
       const cleanEmail = form.email.trim().toLowerCase()
-      const isDemoEmail =
-        cleanEmail === 'recruiter@pathpilot.ai' ||
-        cleanEmail === 'demo@pathpilot.ai' ||
-        cleanEmail === 'student@demo.com' ||
-        cleanEmail === 'recruiter@demo.com'
-
-      if (isDemoEmail) {
-        await new Promise((r) => setTimeout(r, 350))
-        seedRecruiterDemoSession('student')
-        window.location.href = '/student/dashboard'
-        return
+      if (cleanEmail === 'recruiter@pathpilot.ai') {
+        if (form.password === 'Demo@1234') {
+          await new Promise((r) => setTimeout(r, 300))
+          seedRecruiterDemoSession('student')
+          window.location.href = '/student/dashboard'
+          return
+        } else {
+          setError('Invalid login credentials')
+          setLoading(false)
+          return
+        }
       }
 
       if (isDemoMode) {

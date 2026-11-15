@@ -83,19 +83,19 @@ export default function SignInPage() {
     setLoading(true)
 
     try {
-      // ── Recruiter & Demo Bypass (Always Works Guaranteed) ──────────
+      // ── Strict Recruiter Access (ONLY recruiter@pathpilot.ai and ONLY Demo@1234) ──
       const cleanEmail = form.email.trim().toLowerCase()
-      const isDemoEmail =
-        cleanEmail === 'recruiter@pathpilot.ai' ||
-        cleanEmail === 'demo@pathpilot.ai' ||
-        cleanEmail === 'student@demo.com' ||
-        cleanEmail === 'recruiter@demo.com'
-
-      if (isDemoEmail) {
-        await new Promise((r) => setTimeout(r, 350))
-        seedRecruiterDemoSession('student')
-        window.location.href = '/dashboard'
-        return
+      if (cleanEmail === 'recruiter@pathpilot.ai') {
+        if (form.password === 'Demo@1234') {
+          await new Promise((r) => setTimeout(r, 300))
+          seedRecruiterDemoSession('student')
+          window.location.href = '/dashboard'
+          return
+        } else {
+          setError('Invalid login credentials')
+          setLoading(false)
+          return
+        }
       }
 
       if (isDemoMode) {

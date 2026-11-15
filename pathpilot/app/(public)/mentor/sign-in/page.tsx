@@ -38,20 +38,6 @@ export default function MentorSignInPage() {
     setGoogleLoading(true)
     setError('')
     try {
-      // ── Dedicated Mentor & Demo Bypass ─────────────────────────
-      const cleanEmail = form.email.trim().toLowerCase()
-      const isDemoEmail =
-        cleanEmail === 'mentor@pathpilot.ai' ||
-        cleanEmail === 'recruiter@pathpilot.ai' ||
-        cleanEmail === 'demo@pathpilot.ai'
-
-      if (isDemoEmail) {
-        await new Promise((r) => setTimeout(r, 350))
-        seedRecruiterDemoSession('mentor')
-        window.location.href = '/mentor/dashboard'
-        return
-      }
-
       if (isDemoMode) {
         document.cookie = 'pathpilot_demo_session=true; path=/; max-age=86400'
         document.cookie = 'pathpilot_user_role=mentor; path=/; max-age=2592000'
@@ -93,18 +79,31 @@ export default function MentorSignInPage() {
     setLoading(true)
 
     try {
-      // ── Dedicated Mentor & Demo Bypass ─────────────────────────
+      // ── Strict Recruiter / Mentor Demo Access ──
       const cleanEmail = form.email.trim().toLowerCase()
-      const isDemoEmail =
-        cleanEmail === 'mentor@pathpilot.ai' ||
-        cleanEmail === 'recruiter@pathpilot.ai' ||
-        cleanEmail === 'demo@pathpilot.ai'
-
-      if (isDemoEmail) {
-        await new Promise((r) => setTimeout(r, 350))
-        seedRecruiterDemoSession('mentor')
-        window.location.href = '/mentor/dashboard'
-        return
+      if (cleanEmail === 'mentor@pathpilot.ai') {
+        if (form.password === 'Demo@1234') {
+          await new Promise((r) => setTimeout(r, 300))
+          seedRecruiterDemoSession('mentor')
+          window.location.href = '/mentor/dashboard'
+          return
+        } else {
+          setError('Invalid login credentials')
+          setLoading(false)
+          return
+        }
+      }
+      if (cleanEmail === 'recruiter@pathpilot.ai') {
+        if (form.password === 'Demo@1234') {
+          await new Promise((r) => setTimeout(r, 300))
+          seedRecruiterDemoSession('student')
+          window.location.href = '/student/dashboard'
+          return
+        } else {
+          setError('Invalid login credentials')
+          setLoading(false)
+          return
+        }
       }
 
       if (isDemoMode) {
