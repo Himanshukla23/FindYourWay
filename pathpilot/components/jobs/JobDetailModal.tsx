@@ -147,6 +147,16 @@ export function JobDetailModal({
     }
   }
 
+  const cleanTitle = job.title
+    .replace(/\(.*?\)/g, '')
+    .replace(/\[.*?\]/g, '')
+    .replace(/[-–—].*$/, '')
+    .trim()
+
+  const directApplyUrl = job.apply_url
+  const linkedInDirectUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent('"' + job.company + '" ' + cleanTitle)}&location=India&f_TPR=r2592000&sortBy=R`
+  const googleJobsDirectUrl = `https://www.google.com/search?q=${encodeURIComponent('jobs at ' + job.company + ' ' + cleanTitle + ' apply India')}&ibp=htl;jobs`
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
@@ -267,22 +277,32 @@ export function JobDetailModal({
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-border bg-muted/30">
             <div className="flex flex-wrap items-center gap-2">
               <a
-                href={job.apply_url}
+                href={directApplyUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 active:scale-95 transition-all"
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 active:scale-95 transition-all"
               >
                 <span>Apply on Official Portal</span>
                 <ExternalLink className="h-4 w-4" />
               </a>
 
               <a
-                href={`https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(job.company + ' ' + job.title)}`}
+                href={linkedInDirectUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-500/20 active:scale-95 transition-all dark:text-blue-400"
+                className="inline-flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-blue-600 hover:bg-blue-500/20 active:scale-95 transition-all dark:text-blue-400"
               >
                 <span>View on LinkedIn</span>
+                <ExternalLink className="h-4 w-4" />
+              </a>
+
+              <a
+                href={googleJobsDirectUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-emerald-600 hover:bg-emerald-500/20 active:scale-95 transition-all dark:text-emerald-400"
+              >
+                <span>Google Jobs</span>
                 <ExternalLink className="h-4 w-4" />
               </a>
 
