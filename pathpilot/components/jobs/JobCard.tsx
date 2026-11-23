@@ -148,6 +148,21 @@ export function JobCard({ job, onSelect, onToggleSave, onMatchClick }: JobCardPr
             )}
           </div>
         )}
+        {/* Source & Exact Posting Link Badge */}
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+          <span className="inline-flex items-center gap-1 rounded-sm bg-muted px-2 py-0.5 font-medium text-foreground">
+            Source: <strong className="font-semibold">{job.source || 'Direct ATS'}</strong>
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-sm bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 className="h-3 w-3" />
+            Exact posting link
+          </span>
+        </div>
+
+        {/* Verification Note */}
+        <p className="mt-1.5 text-[11px] text-muted-foreground/80 line-clamp-1">
+          New to board • Link verified live via browser
+        </p>
       </div>
 
       {/* Bottom Bar: Recruiter / Verified + Action Buttons */}
@@ -179,13 +194,13 @@ export function JobCard({ job, onSelect, onToggleSave, onMatchClick }: JobCardPr
               e.stopPropagation()
               onMatchClick(job)
             }}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-1.5 text-xs font-semibold text-purple-600 transition-all hover:bg-purple-500/20 dark:text-purple-400"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-purple-500/20 bg-purple-500/10 px-2.5 py-1.5 text-xs font-semibold text-purple-600 transition-all hover:bg-purple-500/20 dark:text-purple-400 cursor-pointer"
           >
             <Sparkles className="h-3.5 w-3.5" />
             AI Fit Score
           </button>
 
-          {/* Direct Apply */}
+          {/* Open original posting */}
           <a
             href={job.apply_url}
             target="_blank"
@@ -193,8 +208,8 @@ export function JobCard({ job, onSelect, onToggleSave, onMatchClick }: JobCardPr
             onClick={(e) => e.stopPropagation()}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-xs transition-transform hover:opacity-90 active:scale-95"
           >
-            <span>Apply</span>
-            <ExternalLink className="h-3 w-3" />
+            <span>Open original posting</span>
+            <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
       </div>

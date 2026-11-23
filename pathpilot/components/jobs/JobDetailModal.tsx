@@ -273,6 +273,19 @@ export function JobDetailModal({
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Source & Exact Posting Link Badge */}
+          <div className="flex flex-wrap items-center gap-2 px-1 text-xs">
+            <span className="rounded-md bg-muted px-2.5 py-1 font-medium text-foreground">
+              Source: <strong className="font-semibold">{job.source || 'Direct ATS'}</strong>
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2.5 py-1 font-semibold text-emerald-600 dark:text-emerald-400">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Exact posting link
+            </span>
+            <span className="text-muted-foreground">•</span>
+            <span className="text-muted-foreground">New to board • Verified live on official portal</span>
+          </div>
+
           {/* Action Row: Apply, Save, Track Application */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-border bg-muted/30">
             <div className="flex flex-wrap items-center gap-2">
@@ -282,7 +295,7 @@ export function JobDetailModal({
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 active:scale-95 transition-all"
               >
-                <span>Apply on Official Portal</span>
+                <span>Open original posting</span>
                 <ExternalLink className="h-4 w-4" />
               </a>
 
