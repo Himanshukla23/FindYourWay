@@ -265,14 +265,24 @@ export function JobDetailModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Action Row: Apply, Save, Track Application */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-border bg-muted/30">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <a
                 href={job.apply_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 active:scale-95 transition-all"
               >
-                <span>Direct Apply on ATS</span>
+                <span>Apply on Official Portal</span>
+                <ExternalLink className="h-4 w-4" />
+              </a>
+
+              <a
+                href={`https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(job.company + ' ' + job.title)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-blue-500/20 bg-blue-500/10 px-4 py-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-500/20 active:scale-95 transition-all dark:text-blue-400"
+              >
+                <span>View on LinkedIn</span>
                 <ExternalLink className="h-4 w-4" />
               </a>
 

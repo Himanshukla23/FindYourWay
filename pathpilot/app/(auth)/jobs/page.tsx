@@ -57,9 +57,9 @@ export default function JobBoardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastVerified, setLastVerified] = useState<string>('')
   
-  // Filters State - Defaults to India jobs first as requested
+  // Filters State - Defaults to All jobs so full index is visible
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedRegion, setSelectedRegion] = useState<'All' | 'India' | 'Global'>('India')
+  const [selectedRegion, setSelectedRegion] = useState<'All' | 'India' | 'Global'>('All')
   const [selectedCity, setSelectedCity] = useState<string>('All')
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [selectedExp, setSelectedExp] = useState<string>('All')
