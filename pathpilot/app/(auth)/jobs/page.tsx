@@ -118,7 +118,8 @@ export default function JobBoardPage() {
         country: selectedRegion !== 'All' ? selectedRegion : undefined,
         role_category: selectedCategory !== 'All' ? selectedCategory : undefined,
         exp_range: selectedExp !== 'All' ? selectedExp : undefined,
-        user_email: userEmail
+        user_email: userEmail,
+        limit: 200
       })
       setJobs(res.jobs || [])
       setLastVerified(res.last_verified || new Date().toISOString())
@@ -200,16 +201,15 @@ export default function JobBoardPage() {
         }
       }
 
-      // Experience Filter (Strict Fresher vs Early Career vs Senior enforcement)
+      // Experience Filter (Fresher vs Early Career vs Senior)
       if (selectedExp === '0-1') {
-        // Strictly pure fresher: 0 years minimum experience required, max <= 2 years
-        if (job.exp_min > 0 || job.exp_max > 2) return false
+        // Freshers & Interns: minimum experience required is 0 or 1, exclude senior titles
+        if (job.exp_min > 1) return false
         const titleL = job.title.toLowerCase()
         if (['senior', 'sr.', 'lead', 'principal', 'staff', 'director', 'vp'].some(w => titleL.includes(w))) return false
       } else if (selectedExp === '1-3') {
-        // Early career: 1-3 years experience (requires 1+ yr or up to 3 yrs)
-        if (job.exp_min > 3 || job.exp_max < 1) return false
-        if (job.exp_min === 0 && job.exp_max <= 2) return false
+        // Early career: 1-3 years experience
+        if (job.exp_min > 3 || (job.exp_max < 1 && job.exp_max !== 0)) return false
       } else if (selectedExp === '3+') {
         // Senior roles: requiring 3+ years experience
         if (job.exp_max < 3 && job.exp_min < 3) return false
@@ -220,14 +220,16 @@ export default function JobBoardPage() {
         if (!job.role_category.toLowerCase().includes(selectedCategory.toLowerCase())) return false
       }
 
-      // Search query filter (instant search across title, company, skills, location)
+      // Search query filter (instant search across title, company, skills, location, category, jd)
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim()
         const matchTitle = job.title.toLowerCase().includes(query)
         const matchCompany = job.company.toLowerCase().includes(query)
         const matchLocation = job.location.toLowerCase().includes(query)
+        const matchCategory = job.role_category.toLowerCase().includes(query)
         const matchSkills = job.skills.some((s) => s.toLowerCase().includes(query))
-        if (!matchTitle && !matchCompany && !matchLocation && !matchSkills) {
+        const matchSummary = job.jd_summary ? job.jd_summary.toLowerCase().includes(query) : false
+        if (!matchTitle && !matchCompany && !matchLocation && !matchCategory && !matchSkills && !matchSummary) {
           return false
         }
       }

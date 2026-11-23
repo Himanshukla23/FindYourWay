@@ -25,12 +25,62 @@ export async function executeAIPrompt({
   const geminiApiKey = process.env.GOOGLE_GEMINI_API_KEY
   const groqApiKey = process.env.GROQ_API_KEY
 
-  // ── 1. Try Google Gemini First (Ultra-fast verified active models) ──────────
+  // ── 1. Try Groq API First (Fastest < 2.5s & Active Models) ──────────────────
+  if (groqApiKey) {
+    try {
+      const groq = new Groq({ apiKey: groqApiKey })
+      
+      const messages: any[] = []
+      if (systemInstruction) {
+        messages.push({ role: 'system', content: systemInstruction })
+      }
+      messages.push({ role: 'user', content: prompt })
+
+      // Active Groq models on user key
+      const groqModels = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'llama-3.3-70b-versatile', 'llama-3.1-8b-instant']
+      let text = null
+      let usedModel = 'openai/gpt-oss-120b'
+
+      for (const m of groqModels) {
+        try {
+          const completion: any = await Promise.race([
+            groq.chat.completions.create({
+              model: m,
+              messages,
+              response_format: responseJson ? { type: 'json_object' } : undefined,
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Groq timeout')), 10000)),
+          ])
+          text = completion.choices[0]?.message?.content
+          if (text) {
+            usedModel = m
+            break
+          }
+        } catch (err: any) {
+          console.warn(`Groq model ${m} skipped:`, err?.message)
+          if (err?.status === 403 || err?.message?.includes('403')) {
+            break
+          }
+        }
+      }
+
+      if (text && text.trim().length > 0) {
+        return {
+          content: text.trim(),
+          providerUsed: 'groq',
+          model: usedModel,
+        }
+      }
+    } catch (groqError: any) {
+      console.warn('❌ [AI] Groq attempt failed:', groqError?.message || groqError)
+    }
+  }
+
+  // ── 2. Fallback to Google Gemini (Active Models with Resilient Timeout) ──────────
   if (geminiApiKey) {
     try {
       const genAI = new GoogleGenerativeAI(geminiApiKey)
-      // gemini-flash-lite-latest and gemini-3.5-flash-lite respond in < 1s
-      const geminiModels = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-flash-latest']
+      const geminiModels = ['gemini-flash-lite-latest', 'gemini-flash-latest', 'gemini-3.8-flash']
       let text = null
       let usedModel = 'gemini-flash-lite-latest'
 
@@ -44,10 +94,9 @@ export async function executeAIPrompt({
             systemInstruction: systemInstruction,
           })
 
-          // Strict 4.5s timeout per attempt so UI never hangs
           const result: any = await Promise.race([
             model.generateContent(prompt),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('AI generation timeout')), 4500)),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('AI generation timeout')), 10000)),
           ])
 
           text = result?.response?.text()
@@ -69,57 +118,6 @@ export async function executeAIPrompt({
       }
     } catch (geminiError: any) {
       console.warn('⚠️ [AI] Gemini request failed or rate limit reached:', geminiError?.message || geminiError)
-    }
-  }
-
-  // ── 2. Fallback to Groq API (Strict short timeout) ──────────────────────────
-  if (groqApiKey) {
-    try {
-      const groq = new Groq({ apiKey: groqApiKey })
-      
-      const messages: any[] = []
-      if (systemInstruction) {
-        messages.push({ role: 'system', content: systemInstruction })
-      }
-      messages.push({ role: 'user', content: prompt })
-
-      const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant']
-      let text = null
-      let usedModel = 'llama-3.3-70b-versatile'
-
-      for (const m of groqModels) {
-        try {
-          const completion: any = await Promise.race([
-            groq.chat.completions.create({
-              model: m,
-              messages,
-              response_format: responseJson ? { type: 'json_object' } : undefined,
-            }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Groq timeout')), 3000)),
-          ])
-          text = completion.choices[0]?.message?.content
-          if (text) {
-            usedModel = m
-            break
-          }
-        } catch (err: any) {
-          console.warn(`Groq model ${m} skipped:`, err?.message)
-          // If auth error (e.g. 403 Forbidden), do not attempt more groq models
-          if (err?.status === 403 || err?.message?.includes('403')) {
-            break
-          }
-        }
-      }
-
-      if (text && text.trim().length > 0) {
-        return {
-          content: text.trim(),
-          providerUsed: 'groq',
-          model: usedModel,
-        }
-      }
-    } catch (groqError: any) {
-      console.warn('❌ [AI] Groq fallback failed:', groqError?.message || groqError)
     }
   }
 

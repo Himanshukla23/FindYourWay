@@ -549,7 +549,7 @@ export async function parseResumeWithBackend(file: File): Promise<{
     const res = await fetch('/api/ai/parse-resume', {
       method: 'POST',
       body: formData,
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(15000),
     })
     if (res.ok) {
       const json = await res.json()
@@ -871,7 +871,7 @@ export async function fetchJobs(params: JobQueryParams = {}): Promise<JobListRes
     )
   }
 
-  const limit = params.limit || 30
+  const limit = params.limit || 200
   const offset = params.offset || 0
 
   return {
