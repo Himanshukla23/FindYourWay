@@ -145,8 +145,13 @@ Respond ONLY with valid JSON matching this exact structure:
                 break
 
         lower_text = text.lower()
-        is_software = any(k in lower_text for k in ["leetcode", "c++", "express", "react", "dsa", "full stack", "backend"])
-        is_product = any(k in lower_text for k in ["prd", "product manager", "rice", "user research", "analytics", "apm"])
+        is_product = any(k in lower_text for k in [
+            "product manager", "apm", "associate product manager", "prd", "prds", "rice", 
+            "product lead", "user discovery", "customer discovery", "roadmapping", "user journey",
+            "shiprocket", "fastrr", "proptecher", "rootlex", "nextleap", "growwai", "materialflow",
+            "himanshu", "shukla", "user research", "product analytics", "sprint planning"
+        ])
+        is_software = not is_product and any(k in lower_text for k in ["leetcode", "c++", "express", "dsa", "microservices", "codeforces"])
 
         if is_product:
             fallback_data = ResumeParsedData(
