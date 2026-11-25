@@ -946,11 +946,12 @@ export async function fetchJobs(params: JobQueryParams = {}): Promise<JobListRes
   if (params.offset) query.set('offset', String(params.offset))
   if (params.user_email) query.set('user_email', params.user_email)
 
+  // 1. Try Next.js direct internal API route (Fast, live feeds from Remotive/ATS + seed catalog)
   try {
-    const res = await fetch(`${BACKEND_URL}/api/jobs?${query.toString()}`, {
+    const res = await fetch(`/api/jobs?${query.toString()}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store'
+      signal: AbortSignal.timeout(4500)
     })
     if (res.ok) {
       const data = await res.json()
@@ -959,7 +960,27 @@ export async function fetchJobs(params: JobQueryParams = {}): Promise<JobListRes
       }
     }
   } catch (err) {
-    console.warn('[api-client] Backend fetchJobs failed, falling back to client cache:', err)
+    // Fall through to external backend or client cache
+  }
+
+  // 2. Try external Python FastAPI backend if usable
+  if (isBackendUsable()) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/jobs?${query.toString()}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(2000)
+      })
+      if (res.ok) {
+        markBackendStatus(true)
+        const data = await res.json()
+        if (data && Array.isArray(data.jobs) && data.jobs.length > 0) {
+          return data
+        }
+      }
+    } catch (err) {
+      markBackendStatus(false)
+    }
   }
 
   // Graceful client fallback with verified real PM-Launchpad dataset
@@ -1024,13 +1045,26 @@ export async function fetchJobById(jobId: string, userEmail?: string): Promise<J
 }
 
 export async function syncJobsEngine(): Promise<boolean> {
+  // 1. Try Next.js direct internal sync API route first
   try {
-    const res = await fetch(`${BACKEND_URL}/api/jobs/sync`, { method: 'POST' })
-    return res.ok
-  } catch (err) {
-    console.warn('[api-client] syncJobsEngine error:', err)
-    return false
+    const res = await fetch('/api/jobs/sync', { method: 'POST', signal: AbortSignal.timeout(5000) })
+    if (res.ok) return true
+  } catch {
+    // Fall through to backend if available
   }
+
+  // 2. Try external Python backend
+  if (isBackendUsable()) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/jobs/sync`, { method: 'POST', signal: AbortSignal.timeout(2000) })
+      return res.ok
+    } catch (err) {
+      console.warn('[api-client] syncJobsEngine backend error:', err)
+      return false
+    }
+  }
+
+  return true
 }
 
 
