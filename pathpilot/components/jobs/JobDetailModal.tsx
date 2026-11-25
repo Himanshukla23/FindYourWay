@@ -22,7 +22,7 @@ import {
   MessageSquare
 } from 'lucide-react'
 import { JobListing, JobMatchAnalysis, JobTailorResponse } from '@/types'
-import { cn } from '@/lib/utils'
+import { cn, formatExperience } from '@/lib/utils'
 import { matchResumeWithJob, trackJobApplication, tailorResumeForJob } from '@/lib/api-client'
 
 interface JobDetailModalProps {
@@ -209,7 +209,7 @@ export function JobDetailModal({
                 <span className="font-medium text-foreground">{job.work_mode}</span>
                 <span>•</span>
                 <span className="font-medium text-foreground">
-                  {job.exp_min === 0 ? "Fresher / 0–2 yrs" : `${job.exp_min}–${job.exp_max} yrs`}
+                  {formatExperience(job)}
                 </span>
                 {job.salary_display && (
                   <>

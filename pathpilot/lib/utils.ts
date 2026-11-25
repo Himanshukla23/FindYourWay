@@ -48,6 +48,29 @@ export function truncate(text: string, maxLength: number): string {
   return text.slice(0, maxLength) + '...'
 }
 
+/** Format experience requirements accurately (e.g. Internship, Fresher 0-1 yr, 1-2 yrs) */
+export function formatExperience(job: { title?: string; exp_min?: number; exp_max?: number }): string {
+  const t = (job.title || '').toLowerCase()
+  if (t.includes('intern') || t.includes('internship') || t.includes('fellow')) {
+    return 'Internship'
+  }
+  const min = job.exp_min ?? 0
+  const max = job.exp_max ?? 0
+  if (min === 0 && max <= 1) {
+    return 'Fresher (0–1 yr)'
+  }
+  if (min === 0 && max === 2) {
+    return 'Fresher / 0–2 yrs'
+  }
+  if (min === 0 && max > 2) {
+    return '0–2 yrs'
+  }
+  if (min === max) {
+    return `${min}+ yrs`
+  }
+  return `${min}–${max} yrs`
+}
+
 /** Check whether Supabase is configured */
 export function isSupabaseConfigured(): boolean {
   return Boolean(

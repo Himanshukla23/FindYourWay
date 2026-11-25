@@ -15,7 +15,7 @@ import {
   UserCheck
 } from 'lucide-react'
 import { JobListing } from '@/types'
-import { cn } from '@/lib/utils'
+import { cn, formatExperience } from '@/lib/utils'
 
 interface JobCardProps {
   job: JobListing
@@ -111,7 +111,7 @@ export function JobCard({ job, onSelect, onToggleSave, onMatchClick }: JobCardPr
           </span>
           <span className="text-muted-foreground/40">•</span>
           <span className="rounded-md bg-muted px-2 py-0.5 font-medium text-foreground">
-            {job.exp_min === 0 ? "Fresher / 0–2y" : `${job.exp_min}–${job.exp_max} yrs`}
+            {formatExperience(job)}
           </span>
           {job.salary_display && job.salary_display !== 'Not Disclosed' && (
             <>

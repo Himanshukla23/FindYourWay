@@ -976,8 +976,12 @@ export async function fetchJobs(params: JobQueryParams = {}): Promise<JobListRes
   }
   if (params.exp_range && params.exp_range !== 'All') {
     if (params.exp_range === '0-1' || params.exp_range === 'fresher') {
-      // Pure Fresher: strictly requires 0 years minimum experience (accepts fresh grads / college seniors)
-      filtered = filtered.filter(j => j.exp_min === 0 && j.exp_max <= 2)
+      // Pure Fresher: includes internships, 0-1y roles, and APM entry roles
+      filtered = filtered.filter(j => {
+        const t = j.title.toLowerCase()
+        if (t.includes('intern') || t.includes('internship') || t.includes('fellow')) return true
+        return j.exp_min <= 1 && j.exp_max <= 2
+      })
     } else if (params.exp_range === '1-3' || params.exp_range === 'early') {
       filtered = filtered.filter(j => (j.exp_min >= 1 && j.exp_min <= 3) || (j.exp_min === 0 && j.exp_max >= 3))
     } else if (params.exp_range === '3+' || params.exp_range === 'senior') {

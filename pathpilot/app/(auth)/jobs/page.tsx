@@ -203,10 +203,14 @@ export default function JobBoardPage() {
 
       // Experience Filter (Fresher vs Early Career vs Senior)
       if (selectedExp === '0-1') {
-        // Freshers & Interns: minimum experience required is 0 or 1, exclude senior titles
-        if (job.exp_min > 1) return false
+        // Freshers & Interns: include all internships, 0-1y roles, and APM entry roles
         const titleL = job.title.toLowerCase()
-        if (['senior', 'sr.', 'lead', 'principal', 'staff', 'director', 'vp'].some(w => titleL.includes(w))) return false
+        if (titleL.includes('intern') || titleL.includes('internship') || titleL.includes('fellow')) {
+          // Pass internship
+        } else {
+          if (job.exp_min > 1) return false
+          if (['senior', 'sr.', 'lead', 'principal', 'staff', 'director', 'vp'].some(w => titleL.includes(w))) return false
+        }
       } else if (selectedExp === '1-3') {
         // Early career: 1-3 years experience
         if (job.exp_min > 3 || (job.exp_max < 1 && job.exp_max !== 0)) return false
@@ -251,10 +255,10 @@ export default function JobBoardPage() {
               <div className="flex items-center gap-2 mb-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-[#00F090] px-3 py-1 text-xs font-tech-mono font-bold text-black">
                   <span className="w-1.5 h-1.5 rounded-full bg-black animate-ping" />
-                  🇮🇳 143+ INDIAN ROLES INDEXED • 100% VERIFIED ATS
+                  🇮🇳 200+ VERIFIED ROLES • LIVE EXACT POSTINGS &amp; INTERNSHIPS
                 </span>
                 <span className="text-xs font-tech-mono text-neutral-500 hidden sm:inline">
-                  Direct recruiter ATS links • Zero aggregator dead ends
+                  Direct ATS, LinkedIn &amp; Internshala postings • Zero generic career page dead ends
                 </span>
               </div>
 

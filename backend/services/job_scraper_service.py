@@ -602,13 +602,15 @@ class JobEngineService:
             if query.exp_range and query.exp_range != "All":
                 exp_key = query.exp_range.lower().strip()
                 if exp_key in ("0-1", "fresher", "freshers", "intern"):
-                    # Strictly pure fresher: 0 years minimum experience required, max <= 2 years
-                    if job.exp_min > 0 or job.exp_max > 2:
-                        continue
-                    # Exclude any senior/lead titles that might have slipped into seed data
+                    # Freshers & Interns: include internships and entry APM / 0-1y roles
                     title_l = job.title.lower()
-                    if any(w in title_l for w in ("senior", "sr.", "lead", "principal", "staff", "director", "vp")):
-                        continue
+                    if "intern" in title_l or "internship" in title_l or "fellow" in title_l:
+                        pass
+                    else:
+                        if job.exp_min > 1 or job.exp_max > 2:
+                            continue
+                        if any(w in title_l for w in ("senior", "sr.", "lead", "principal", "staff", "director", "vp")):
+                            continue
                 elif exp_key in ("1-3", "early", "early career"):
                     # Early career: 1-3 years experience (requires at least 1 year or ranges up to 3 years)
                     if job.exp_min > 3 or job.exp_max < 1:
